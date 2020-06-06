@@ -1,7 +1,7 @@
 ﻿using Serilog.Events;
 using Serilog.Sinks.Datadog.Logs;
 
-namespace TehGM.WolfBots.PicSizeCheckBot.Options
+namespace TehGM.WolfBots.Options
 {
     public class DatadogOptions
     {

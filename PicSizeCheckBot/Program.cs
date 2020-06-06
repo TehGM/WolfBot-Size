@@ -5,7 +5,9 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Threading.Tasks;
+using TehGM.WolfBots.Options;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
+using TehGM.WolfBots.PicSizeCheckBot.SizeChecking;
 using TehGM.Wolfringo.Hosting;
 
 namespace TehGM.WolfBots.PicSizeCheckBot
@@ -24,10 +26,18 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    // configure and add hosted wolf client
+                    // configure options
                     services.Configure<HostedWolfClientOptions>(context.Configuration.GetSection("WolfClient"));
+                    services.Configure<PictureSizeOptions>(context.Configuration.GetSection("PictureSize"));
+
+                    // add framework services
+                    services.AddHttpClient();
+
+                    // add hosted wolf client
                     services.AddWolfClient();
-                    services.AddHostedService<TempMessageHandler>();
+
+                    // add handlers
+                    services.AddHostedService<PictureSizeHandler>();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();
