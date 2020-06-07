@@ -1,9 +1,13 @@
-﻿namespace TehGM.WolfBots.PicSizeCheckBot
+﻿using MongoDB.Bson.Serialization.Attributes;
+
+namespace TehGM.WolfBots.PicSizeCheckBot
 {
     /// <summary>Represents group configuration.</summary>
     public class GroupConfig
     {
         /// <summary>ID of the group<./summary>
+        [BsonId]
+        [BsonElement("_id")]
         public uint GroupID { get; private set; }
 
         // listen modes
@@ -22,6 +26,7 @@
         /// <summary>Whether automatic size checks are enabled in this group at all.</summary>
         public bool IsEnabled { get; set; } = true;
 
+        [BsonConstructor(nameof(GroupID))]
         public GroupConfig(uint groupID)
         {
             this.GroupID = groupID;
