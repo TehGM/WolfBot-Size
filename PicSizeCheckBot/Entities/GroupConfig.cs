@@ -8,7 +8,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         /// <summary>ID of the group<./summary>
         [BsonId]
         [BsonElement("_id")]
-        public uint GroupID { get; private set; }
+        public uint GroupID { get; }
 
         // listen modes
         /// <summary>Whether bot should check sizes of images posted by admins.</summary>

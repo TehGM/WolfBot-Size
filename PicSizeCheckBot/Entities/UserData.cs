@@ -8,15 +8,15 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         /// <summary>ID of the user<./summary>
         [BsonId]
         [BsonElement("_id")]
-        public uint UserID { get; private set; }
+        public uint UserID { get; }
 
         // permissions
         /// <summary>Whether user should have access to admin-only commands.</summary>
-        public uint IsBotAdmin { get; set; }
+        public bool IsBotAdmin { get; set; } = false;
 
         // settings
         /// <summary>Whether bot should post image URL for size checks when used in PM.</summary>
-        public bool PostImageURL { get; set; }
+        public bool PostImageURL { get; set; } = true;
 
         [BsonConstructor(nameof(UserID))]
         public UserData(uint userID)
