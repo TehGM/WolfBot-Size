@@ -6,6 +6,7 @@ using Serilog.Events;
 using System;
 using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
+using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.WolfBots.PicSizeCheckBot.SizeChecking;
 using TehGM.Wolfringo.Hosting;
 
@@ -26,6 +27,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                 .ConfigureServices((context, services) =>
                 {
                     // configure options
+                    services.Configure<BotOptions>(context.Configuration);
                     services.Configure<HostedWolfClientOptions>(context.Configuration.GetSection("WolfClient"));
                     services.Configure<PictureSizeOptions>(context.Configuration.GetSection("PictureSize"));
 
