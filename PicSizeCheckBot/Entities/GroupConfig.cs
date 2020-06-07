@@ -1,0 +1,30 @@
+﻿namespace TehGM.WolfBots.PicSizeCheckBot
+{
+    /// <summary>Represents group configuration.</summary>
+    public class GroupConfig
+    {
+        /// <summary>ID of the group<./summary>
+        public uint GroupID { get; private set; }
+
+        // listen modes
+        /// <summary>Whether bot should check sizes of images posted by admins.</summary>
+        public bool ListenAdmins { get; set; } = true;
+        /// <summary>Whether bot should check sizes of images posted by mods.</summary>
+        public bool ListenMods { get; set; } = true;
+        /// <summary>Whether bot should check sizes of images posted by users without privileges.</summary>
+        public bool ListenUsers { get; set; } = true;
+        /// <summary>Whether bot should check sizes of images posted by official bots.</summary>
+        public bool ListenBots { get; set; } = true;
+
+        // settings
+        /// <summary>Whether bot should post image URL for size checks when used in PM.</summary>
+        public bool PostImageURL { get; set; } = true;
+        /// <summary>Whether automatic size checks are enabled in this group at all.</summary>
+        public bool IsEnabled { get; set; } = true;
+
+        public GroupConfig(uint groupID)
+        {
+            this.GroupID = groupID;
+        }
+    }
+}
