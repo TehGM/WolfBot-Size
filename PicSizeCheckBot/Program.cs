@@ -6,7 +6,6 @@ using Serilog.Events;
 using System;
 using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
-using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.WolfBots.PicSizeCheckBot.SizeChecking;
 using TehGM.Wolfringo.Hosting;
 

@@ -1,4 +1,4 @@
-﻿namespace TehGM.WolfBots.PicSizeCheckBot.Options
+﻿namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 {
     public class PictureSizeOptions
     {
