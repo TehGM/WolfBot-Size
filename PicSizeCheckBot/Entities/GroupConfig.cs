@@ -3,7 +3,7 @@
 namespace TehGM.WolfBots.PicSizeCheckBot
 {
     /// <summary>Represents group configuration.</summary>
-    public class GroupConfig
+    public class GroupConfig : ITargetConfig
     {
         /// <summary>ID of the group<./summary>
         [BsonId]

@@ -3,7 +3,7 @@
 namespace TehGM.WolfBots.PicSizeCheckBot
 {
     /// <summary>Represents config and working data of the user.</summary>
-    public class UserData
+    public class UserData : ITargetConfig
     {
         /// <summary>ID of the user<./summary>
         [BsonId]

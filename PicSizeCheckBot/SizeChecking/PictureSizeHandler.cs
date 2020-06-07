@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
 using TehGM.Wolfringo.Hosting;
@@ -23,22 +24,31 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         private readonly IOptionsMonitor<PictureSizeOptions> _picSizeOptions;
         private readonly IOptionsMonitor<BotOptions> _botOptions;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IUserDataStore _userDataStore;
+        private readonly IGroupConfigStore _groupConfigStore;
         private readonly ILogger _log;
 
         private Regex _urlMatchingRegex;
 
-        public PictureSizeHandler(IHostedWolfClient client, ILogger<PictureSizeHandler> logger, IHostEnvironment environment, IHttpClientFactory httpClientFactory, 
+        public PictureSizeHandler(IHostedWolfClient client, 
+            ILogger<PictureSizeHandler> logger, IHostEnvironment environment, IHttpClientFactory httpClientFactory,
+            IUserDataStore userDataStore, IGroupConfigStore groupConfigStore,
             IOptionsMonitor<PictureSizeOptions> picSizeOptions, IOptionsMonitor<BotOptions> botOptions)
         {
+            // store all services
             this._client = client;
+            this._log = logger;
             this._environment = environment;
+            this._httpClientFactory = httpClientFactory;
+            this._userDataStore = userDataStore;
+            this._groupConfigStore = groupConfigStore;
             this._picSizeOptions = picSizeOptions;
             this._botOptions = botOptions;
-            this._httpClientFactory = httpClientFactory;
-            this._log = logger;
 
+            // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
 
+            // read options
             this.OnPicSizeOptionsReload(picSizeOptions.CurrentValue);
             picSizeOptions.OnChange(this.OnPicSizeOptionsReload);
         }
@@ -72,6 +82,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 
         private async Task HandleImageCheckRequestAsync(ChatMessage message, string imageUrl)
         {
+            ITargetConfig config = await GetConfigAsync(message).ConfigureAwait(false);
+            if (!await CheckShouldSendAsync(message, config).ConfigureAwait(false))
+                return;
+
             using IDisposable logScope = _log.BeginScope(new Dictionary<string, object>()
             {
                 { "ImageURL", imageUrl },
@@ -93,9 +107,53 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             _log.LogTrace("Verifying image size");
             PictureSize size = Verify(img.Size);
             _log.LogTrace("Image size: {ImageSize}", size);
-            await _client.RespondWithTextAsync(message, $"Image size: {size} {GetEmoteForExpression(!size.IsTooSmall && !size.IsTooBig)}\r\n" +
-                $"Is square: {GetEmoteForExpression(size.IsSquare)}\r\n" +
-                $"Image URL: {imageUrl}").ConfigureAwait(false);
+
+            // build message
+            string response = $"Image size: {size} {GetEmoteForExpression(!size.IsTooSmall && !size.IsTooBig)}\r\n" +
+                $"Is square: {GetEmoteForExpression(size.IsSquare)}";
+            if (config.PostImageURL)
+                response += $"\r\nImage URL: {imageUrl}";
+
+            // send the response
+            await _client.RespondWithTextAsync(message, response).ConfigureAwait(false);
+        }
+
+        private async Task<ITargetConfig> GetConfigAsync(ChatMessage message)
+        {
+            if (message.IsGroupMessage)
+                return await _groupConfigStore.GetGroupConfigAsync(message.RecipientID).ConfigureAwait(false);
+            else
+                return await _userDataStore.GetUserDataAsync(message.SenderID.Value).ConfigureAwait(false);
+        }
+
+        private async ValueTask<bool> CheckShouldSendAsync(ChatMessage message, ITargetConfig config)
+        {
+            _log.LogTrace("Determining if should check the image size");
+            if (config is GroupConfig groupConfig)
+            {
+                // if disabled for all, can return early
+                if (!groupConfig.IsEnabled || (!groupConfig.ListenUsers && !groupConfig.ListenMods && !groupConfig.ListenAdmins && !groupConfig.ListenBots))
+                    return false;
+                WolfGroup group = await _client.GetGroupAsync(message.RecipientID).ConfigureAwait(false);
+                WolfGroupMember member = group.Members[message.SenderID.Value];
+
+                // check for all permissions
+                if (groupConfig.ListenUsers && member.Capabilities == WolfGroupCapabilities.User)
+                    return true;
+                if (groupConfig.ListenMods && member.Capabilities == WolfGroupCapabilities.Mod)
+                    return true;
+                if (groupConfig.ListenAdmins && member.HasAdminPrivileges)
+                    return true;
+                if (groupConfig.ListenBots)
+                {
+                    WolfUser user = await _client.GetUserAsync(message.SenderID.Value);
+                    return user.Device == WolfDevice.Bot;
+                }
+
+                // return false if all privilege checks failed
+                return false;
+            }
+            else return true;
         }
 
         private static string GetEmoteForExpression(bool expression)
