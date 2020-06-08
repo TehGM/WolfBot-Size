@@ -6,6 +6,7 @@ using Serilog.Events;
 using System;
 using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
+using TehGM.WolfBots.PicSizeCheckBot.Admin;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Database.Services;
@@ -52,6 +53,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
                     // add handlers
                     services.AddHostedService<PictureSizeHandler>();
+                    services.AddHostedService<CacheAdminHandler>();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();

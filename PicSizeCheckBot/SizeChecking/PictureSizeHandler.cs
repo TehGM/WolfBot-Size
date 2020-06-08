@@ -65,6 +65,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 
         private async void OnChatMessage(ChatMessage message)
         {
+            using IDisposable logScope = message.BeginLogScope(_log);
+
             // if not in production, work only in PM for testing
             // permit working in private test group
             if (!_environment.IsProduction() && !message.IsPrivateMessage && message.RecipientID != 2790082)
@@ -105,18 +107,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 }
             }
             catch (TaskCanceledException) { }
-            catch (Exception ex)
-            {
-                using IDisposable logScope = _log.BeginScope(new Dictionary<string, object>()
-                {
-                    { "MessageText", message.Text },
-                    { "SenderID", message.SenderID.Value },
-                    { "RecipientID", message.RecipientID },
-                    { "GroupName", message.IsGroupMessage ? message.RecipientID.ToString() : null }
-                });
-
-                _log.LogError(ex, "Error occured when processing message");
-            }
+            catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
         }
 
         #region Configuration

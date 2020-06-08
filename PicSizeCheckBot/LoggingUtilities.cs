@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using TehGM.Wolfringo.Messages;
 
 namespace TehGM.WolfBots
 {
     /// <summary>Utilities for logging the exception with scope preserved using 'when' keyword.</summary>
-    public static class ExceptionLoggingUtilities
+    public static class LoggingUtilities
     {
         public static bool LogAsCritical(this Exception exception, ILogger log, string message, params object[] args)
         {
@@ -35,6 +37,17 @@ namespace TehGM.WolfBots
         {
             log?.LogTrace(exception, message, args);
             return true;
+        }
+
+        public static IDisposable BeginLogScope(this ChatMessage message, ILogger log)
+        {
+            return log.BeginScope(new Dictionary<string, object>()
+                {
+                    { "MessageText", message.Text },
+                    { "SenderID", message.SenderID.Value },
+                    { "RecipientID", message.RecipientID },
+                    { "GroupName", message.IsGroupMessage ? message.RecipientID.ToString() : null }
+                });
         }
     }
 }
