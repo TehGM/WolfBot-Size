@@ -8,7 +8,7 @@ namespace TehGM.WolfBots.Caching
         int CachedCount { get; }
 
         void Clear();
-        IEnumerable<TEntity> Find(Func<TEntity, bool> predicate);
+        IEnumerable<TEntity> Find(Func<CachedEntity<TEntity>, bool> predicate);
         void AddOrReplace(TKey key, TEntity entity);
         TEntity GetByKey(TKey key);
     }
