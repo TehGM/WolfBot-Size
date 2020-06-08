@@ -14,6 +14,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
         private TimeSpan _expirationTime => _cachingOptions.Get(OptionName).Lifetime;
 
         public IdQueueCache(IOptionsMonitor<CachingOptions> cachingOptions)
+            : base(StringComparer.OrdinalIgnoreCase)
         {
             this._cachingOptions = cachingOptions;
         }

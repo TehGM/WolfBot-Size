@@ -7,9 +7,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
 {
     public class EntityCache<TKey, TEntity> : IEntityCache<TKey, TEntity> where TEntity : IEntity<TKey>
     {
-        private IDictionary<TKey, CachedEntity<TEntity>> _cachedEntities = new Dictionary<TKey, CachedEntity<TEntity>>();
+        private readonly IDictionary<TKey, CachedEntity<TEntity>> _cachedEntities;
 
         public int CachedCount => _cachedEntities.Count;
+
+        public EntityCache(IEqualityComparer<TKey> comparer)
+        {
+            this._cachedEntities = new Dictionary<TKey, CachedEntity<TEntity>>(comparer);
+        }
+
+        public EntityCache() : this(EqualityComparer<TKey>.Default) { }
 
         public virtual void AddOrReplace(TEntity entity)
             => _cachedEntities[entity.ID] = new CachedEntity<TEntity>(entity);

@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,26 +11,32 @@ using TehGM.WolfBots.PicSizeCheckBot.Options;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 {
-    public class MongoIdQueuesStore : MongoRepositoryBase, IIdQueueStore
+    public class MongoIdQueuesStore : MongoRepositoryBase, IIdQueueStore, IDisposable
     {
         private readonly ILogger<MongoIdQueuesStore> _log;
-        private IMongoCollection<IdQueue> _usersDataCollection;
+        private IMongoCollection<IdQueue> _idQueuesCollection;
         private readonly ReplaceOptions _replaceOptions;
         private readonly IIdQueueCache _cache;
+        private readonly MongoDelayedBatchInserter<string, IdQueue> _batchInserter;
+        private readonly IDisposable _hostStoppingRegistration;
 
-        public MongoIdQueuesStore(IMongoConnection databaseConnection, IOptionsMonitor<DatabaseOptions> databaseOptions,
+        public MongoIdQueuesStore(IMongoConnection databaseConnection, IOptionsMonitor<DatabaseOptions> databaseOptions, IHostApplicationLifetime hostLifetime,
             ILogger<MongoIdQueuesStore> logger, IIdQueueCache cache)
             : base(databaseConnection, databaseOptions)
         {
             this._log = logger;
             this._cache = cache;
             this._replaceOptions = new ReplaceOptions() { IsUpsert = true, BypassDocumentValidation = false };
+            this._batchInserter = new MongoDelayedBatchInserter<string, IdQueue>(TimeSpan.FromMinutes(10), StringComparer.OrdinalIgnoreCase);
+
+            this._hostStoppingRegistration = hostLifetime.ApplicationStopping.Register(_batchInserter.Flush);
         }
 
         protected override void OnMongoClientChanged(MongoClient newClient)
         {
             DatabaseOptions options = base.DatabaseOptions.CurrentValue;
-            _usersDataCollection = newClient.GetDatabase(options.DatabaseName).GetCollection<IdQueue>(options.IdQueuesCollectionName);
+            _idQueuesCollection = newClient.GetDatabase(options.DatabaseName).GetCollection<IdQueue>(options.IdQueuesCollectionName);
+            _batchInserter.UpdateCollection(_idQueuesCollection);
         }
 
         public async Task<IdQueue> GetIdQueueAsync(string name, CancellationToken cancellationToken = default)
@@ -43,7 +51,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
             // get from DB
             _log.LogTrace("Retrieving IDs queue {QueueName} from database", name);
-            result = await _usersDataCollection.Find(dbQueue => dbQueue.Name == name).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            result = await _idQueuesCollection.Find(dbQueue => dbQueue.Name.ToLowerInvariant() == name.ToLowerInvariant()).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
             if (result != null)
                 _cache.AddOrReplace(result);
             else
@@ -64,7 +72,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
             // get from DB
             _log.LogTrace("Retrieving IDs queue owned by user {UserID} from database", ownerID);
-            result = await _usersDataCollection.Find(dbQueue => dbQueue.OwnerID == ownerID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            result = await _idQueuesCollection.Find(dbQueue => dbQueue.OwnerID == ownerID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
             if (result != null)
                 _cache.AddOrReplace(result);
             else
@@ -77,7 +85,15 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         {
             _log.LogTrace("Inserting IDs queue {QueueName} into database", queue.Name);
             _cache.AddOrReplace(queue);
-            return _usersDataCollection.ReplaceOneAsync(dbQueue => dbQueue.Name == queue.Name, queue, _replaceOptions, cancellationToken);
+            return _batchInserter.BatchAsync(queue.Name, new MongoDelayedInsert<IdQueue>(dbQueue => dbQueue.Name.ToLowerInvariant() == queue.Name.ToLowerInvariant(), queue, _replaceOptions));
+        }
+
+        public override void Dispose()
+        {
+            this._hostStoppingRegistration?.Dispose();
+            this._batchInserter?.Flush();
+            this._batchInserter?.Dispose();
+            base.Dispose();
         }
     }
 }
