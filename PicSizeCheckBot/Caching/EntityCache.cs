@@ -16,7 +16,7 @@ namespace TehGM.WolfBots.Caching
             => _cachedEntities[key] = entity;
 
         public void Clear()
-            => _cachedEntities.Count();
+            => _cachedEntities.Clear();
 
         public IEnumerable<TEntity> Find(Func<TEntity, bool> predicate)
             => _cachedEntities.Values.Where(predicate).ToImmutableArray();
