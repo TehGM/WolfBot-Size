@@ -4,16 +4,16 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace TehGM.WolfBots.Caching
+namespace TehGM.WolfBots.PicSizeCheckBot.Caching
 {
-    public class EntityCache<TKey, TEntity> : IEntityCache<TKey, TEntity>, IEnumerable<CachedEntity<TEntity>>, IEnumerable<TEntity>
+    public class EntityCache<TKey, TEntity> : IEntityCache<TKey, TEntity>, IEnumerable<CachedEntity<TEntity>> where TEntity : IEntity<TKey>
     {
         private IDictionary<TKey, CachedEntity<TEntity>> _cachedEntities = new Dictionary<TKey, CachedEntity<TEntity>>();
 
         public int CachedCount => _cachedEntities.Count;
 
-        public virtual void AddOrReplace(TKey key, TEntity entity)
-            => _cachedEntities[key] = new CachedEntity<TEntity>(entity);
+        public virtual void AddOrReplace(TEntity entity)
+            => _cachedEntities[entity.ID] = new CachedEntity<TEntity>(entity);
 
         public void Clear()
             => _cachedEntities.Clear();
@@ -42,9 +42,6 @@ namespace TehGM.WolfBots.Caching
                 _cachedEntities.Remove(expired[i].Key);
             return expired.Length;
         }
-
-        IEnumerator<TEntity> IEnumerable<TEntity>.GetEnumerator()
-            => _cachedEntities.Values.Select(e => e.Entity).GetEnumerator();
 
         IEnumerator<CachedEntity<TEntity>> IEnumerable<CachedEntity<TEntity>>.GetEnumerator()
             => _cachedEntities.Values.GetEnumerator();

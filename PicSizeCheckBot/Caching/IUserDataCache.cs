@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using TehGM.WolfBots.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Caching
@@ -22,11 +21,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching
             this._log = logger;
         }
 
-        public override void AddOrReplace(uint key, UserData entity)
+        public override void AddOrReplace(UserData entity)
         {
             if (!_cachingOptions.CurrentValue.CacheUserData)
                 return;
-            base.AddOrReplace(key, entity);
+            base.AddOrReplace(entity);
         }
 
         private async Task AutoClearLoopAsync(CancellationToken cancellationToken = default)

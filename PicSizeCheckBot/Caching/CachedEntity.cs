@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TehGM.WolfBots.Caching
+namespace TehGM.WolfBots.PicSizeCheckBot.Caching
 {
     public class CachedEntity<TEntity>
     {
