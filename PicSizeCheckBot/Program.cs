@@ -6,6 +6,7 @@ using Serilog.Events;
 using System;
 using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
+using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Database.Services;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
@@ -44,6 +45,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.AddSingleton<IMongoConnection, MongoConnection>();
                     services.AddSingleton<IUserDataStore, MongoUserDataStore>();
                     services.AddSingleton<IGroupConfigStore, MongoGroupConfigStore>();
+
+                    // add caches
+                    services.AddSingleton<IUserDataCache, UserDataCache>();
+                    services.AddSingleton<IGroupConfigCache, GroupConfigCache>();
 
                     // add handlers
                     services.AddHostedService<PictureSizeHandler>();
