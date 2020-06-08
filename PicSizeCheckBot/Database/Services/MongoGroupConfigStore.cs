@@ -42,7 +42,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
             // get from DB
             _log.LogTrace("Retrieving group config for group {GroupID} from database", groupID);
-            result = await _groupConfigsCollection.Find(dbConfig => dbConfig.GroupID == groupID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            result = await _groupConfigsCollection.Find(dbConfig => dbConfig.ID == groupID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             // if not found, return default data
             if (result == null)
@@ -57,9 +57,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
         public Task SetGroupConfigAsync(GroupConfig config, CancellationToken cancellationToken = default)
         {
-            _log.LogTrace("Inserting group config for group {GroupID} into database", config.GroupID);
+            _log.LogTrace("Inserting group config for group {GroupID} into database", config.ID);
             _cache.AddOrReplace(config);
-            return _groupConfigsCollection.ReplaceOneAsync(dbData => dbData.GroupID == config.GroupID, config, _replaceOptions, cancellationToken);
+            return _groupConfigsCollection.ReplaceOneAsync(dbData => dbData.ID == config.ID, config, _replaceOptions, cancellationToken);
         }
     }
 }

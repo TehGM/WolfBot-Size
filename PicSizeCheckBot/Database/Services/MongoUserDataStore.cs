@@ -42,7 +42,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
             // get from DB
             _log.LogTrace("Retrieving user data for user {UserID} from database", userID);
-            result = await _usersDataCollection.Find(dbData => dbData.UserID == userID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            result = await _usersDataCollection.Find(dbData => dbData.ID == userID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             // if not found, return default data
             if (result == null)
@@ -57,9 +57,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
         public Task SetUserDataAsync(UserData data, CancellationToken cancellationToken = default)
         {
-            _log.LogTrace("Inserting user data for user {UserID} into database", data.UserID);
+            _log.LogTrace("Inserting user data for user {UserID} into database", data.ID);
             _cache.AddOrReplace(data);
-            return _usersDataCollection.ReplaceOneAsync(dbData => dbData.UserID == data.UserID, data, _replaceOptions, cancellationToken);
+            return _usersDataCollection.ReplaceOneAsync(dbData => dbData.ID == data.ID, data, _replaceOptions, cancellationToken);
         }
     }
 }

@@ -3,12 +3,12 @@
 namespace TehGM.WolfBots.PicSizeCheckBot
 {
     /// <summary>Represents group configuration.</summary>
-    public class GroupConfig : ITargetConfig
+    public class GroupConfig : ITargetConfig, IEntity<uint>
     {
         /// <summary>ID of the group<./summary>
         [BsonId]
         [BsonElement("_id")]
-        public uint GroupID { get; }
+        public uint ID { get; }
 
         // listen modes
         /// <summary>Whether bot should check sizes of images posted by admins.</summary>
@@ -26,10 +26,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         /// <summary>Whether automatic size checks are enabled in this group at all.</summary>
         public bool IsEnabled { get; set; } = true;
 
-        [BsonConstructor(nameof(GroupID))]
+        [BsonConstructor(nameof(ID))]
         public GroupConfig(uint groupID)
         {
-            this.GroupID = groupID;
+            this.ID = groupID;
         }
     }
 }
