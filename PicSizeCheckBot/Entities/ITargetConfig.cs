@@ -2,6 +2,6 @@
 {
     public interface ITargetConfig
     {
-        bool PostImageURL { get; }
+        bool PostImageURL { get; set; }
     }
 }
