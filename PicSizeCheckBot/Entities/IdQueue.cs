@@ -12,13 +12,13 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         string IEntity<string>.ID => Name;
 
         public uint? OwnerID { get; set; }
-        public ICollection<uint> QueuedIDs { get; set; }
+        public Queue<uint> QueuedIDs { get; set; }
 
         [BsonConstructor(nameof(Name))]
         public IdQueue(string name)
         {
             this.Name = name;
-            this.QueuedIDs = new List<uint>();
+            this.QueuedIDs = new Queue<uint>();
         }
 
         public IdQueue(string name, uint ownerID) : this(name)
