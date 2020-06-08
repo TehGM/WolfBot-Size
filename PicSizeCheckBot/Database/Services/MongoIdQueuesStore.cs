@@ -81,7 +81,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             return result;
         }
 
-        public Task SetGroupConfigAsync(IdQueue queue, CancellationToken cancellationToken = default)
+        public Task SetIdQueueAsync(IdQueue queue, CancellationToken cancellationToken = default)
         {
             _log.LogTrace("Inserting IDs queue {QueueName} into database", queue.Name);
             _cache.AddOrReplace(queue);
