@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 
-namespace TehGM.WolfBots.PicSizeCheckBot.Caching
+namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
 {
     public class CacheCleaner : BackgroundService, IDisposable
     {

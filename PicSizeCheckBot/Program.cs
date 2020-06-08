@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
 using TehGM.WolfBots.PicSizeCheckBot.Admin;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
+using TehGM.WolfBots.PicSizeCheckBot.Caching.Services;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Database.Services;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
@@ -37,6 +38,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.Configure<DatabaseOptions>(context.Configuration.GetSection("Database"));
                     services.Configure<CachingOptions>(UserDataCache.OptionName, context.Configuration.GetSection("Caching:" + UserDataCache.OptionName));
                     services.Configure<CachingOptions>(GroupConfigCache.OptionName, context.Configuration.GetSection("Caching:" + GroupConfigCache.OptionName));
+                    services.Configure<CachingOptions>(IdQueueCache.OptionName, context.Configuration.GetSection("Caching:" + IdQueueCache.OptionName));
 
                     // add framework services
                     services.AddHttpClient();

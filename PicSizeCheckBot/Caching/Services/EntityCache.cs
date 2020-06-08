@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace TehGM.WolfBots.PicSizeCheckBot.Caching
+namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
 {
     public class EntityCache<TKey, TEntity> : IEntityCache<TKey, TEntity> where TEntity : IEntity<TKey>
     {
