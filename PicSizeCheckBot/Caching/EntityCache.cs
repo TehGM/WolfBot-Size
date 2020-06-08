@@ -12,7 +12,7 @@ namespace TehGM.WolfBots.Caching
 
         public int CachedCount => _cachedEntities.Count;
 
-        public void AddOrReplace(TKey key, TEntity entity)
+        public virtual void AddOrReplace(TKey key, TEntity entity)
             => _cachedEntities[key] = new CachedEntity<TEntity>(entity);
 
         public void Clear()
@@ -34,6 +34,14 @@ namespace TehGM.WolfBots.Caching
 
         protected virtual bool IsEntityExpired(CachedEntity<TEntity> entity)
             => false;
+
+        protected int ClearExpired()
+        {
+            KeyValuePair<TKey, CachedEntity<TEntity>>[] expired = _cachedEntities.Where(pair => IsEntityExpired(pair.Value)).ToArray();
+            for (int i = 0; i < expired.Length; i++)
+                _cachedEntities.Remove(expired[i].Key);
+            return expired.Length;
+        }
 
         IEnumerator<TEntity> IEnumerable<TEntity>.GetEnumerator()
             => _cachedEntities.Values.Select(e => e.Entity).GetEnumerator();
