@@ -10,5 +10,6 @@
         // collections
         public string UsersDataCollectionName { get; set; } = "UsersData";
         public string GroupConfigsCollectionName { get; set; } = "GroupConfigs";
+        public string IdQueuesCollectionName { get; set; } = "IdQueues";
     }
 }

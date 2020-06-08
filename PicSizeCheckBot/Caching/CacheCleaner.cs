@@ -20,14 +20,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching
         private readonly IOptionsMonitor<CachingOptions> _cachingOptions;
         private readonly IUserDataCache _userDataCache;
         private readonly IGroupConfigCache _groupConfigCache;
+        private readonly IIdQueueCache _idQueueCache;
 
         public CacheCleaner(ILogger<CacheCleaner> logger, IOptionsMonitor<CachingOptions> cachingOptions,
-            IUserDataCache userDataCache, IGroupConfigCache groupConfigCache)
+            IUserDataCache userDataCache, IGroupConfigCache groupConfigCache, IIdQueueCache idQueueCache)
         {
             this._log = logger;
             this._cachingOptions = cachingOptions;
             this._userDataCache = userDataCache;
             this._groupConfigCache = groupConfigCache;
+            this._idQueueCache = idQueueCache;
 
             this._optionsChangeHandle = this._cachingOptions.OnChange(_ =>
             {
@@ -63,8 +65,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching
             this._cts?.Dispose();
             this._cts = CancellationTokenSource.CreateLinkedTokenSource(_hostedCancellationToken);
 
-            _ = AutoClearLoopAsync(_userDataCache, "UserData", _cts.Token);
-            _ = AutoClearLoopAsync(_groupConfigCache, "GroupConfig", _cts.Token);
+            _ = AutoClearLoopAsync(_userDataCache, UserDataCache.OptionName, _cts.Token);
+            _ = AutoClearLoopAsync(_groupConfigCache, GroupConfigCache.OptionName, _cts.Token);
+            _ = AutoClearLoopAsync(_idQueueCache, IdQueueCache.OptionName, _cts.Token);
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
