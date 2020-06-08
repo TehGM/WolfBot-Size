@@ -10,6 +10,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching
         void Clear();
         IEnumerable<TEntity> Find(Func<CachedEntity<TEntity>, bool> predicate);
         void AddOrReplace(TEntity entity);
-        TEntity GetByKey(TKey key);
+        void Remove(TKey key);
+        TEntity Get(TKey key);
     }
 }

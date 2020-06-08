@@ -33,7 +33,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         public async Task<UserData> GetUserDataAsync(uint userID, CancellationToken cancellationToken = default)
         {
             // check cache first
-            UserData result = _cache.GetByKey(userID);
+            UserData result = _cache.Get(userID);
             if (result != null)
             {
                 _log.LogTrace("User data for user {UserID} found in cache", userID);

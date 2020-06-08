@@ -33,7 +33,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         public async Task<GroupConfig> GetGroupConfigAsync(uint groupID, CancellationToken cancellationToken = default)
         {
             // check cache first
-            GroupConfig result = _cache.GetByKey(groupID);
+            GroupConfig result = _cache.Get(groupID);
             if (result != null)
             {
                 _log.LogTrace("Group config for group {GroupID} found in cache", groupID);

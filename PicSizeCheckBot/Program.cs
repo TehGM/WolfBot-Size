@@ -50,8 +50,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     // add caches
                     services.AddSingleton<IUserDataCache, UserDataCache>();
                     services.AddSingleton<IGroupConfigCache, GroupConfigCache>();
-                    services.AddSingleton<IHostedService>(serviceProvider => (IHostedService)serviceProvider.GetRequiredService<IUserDataCache>());
-                    services.AddSingleton<IHostedService>(serviceProvider => (IHostedService)serviceProvider.GetRequiredService<IGroupConfigCache>());
+                    services.AddHostedService<CacheCleaner>();
 
                     // add handlers
                     services.AddHostedService<PictureSizeHandler>();
