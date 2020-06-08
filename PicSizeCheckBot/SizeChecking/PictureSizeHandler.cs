@@ -17,7 +17,7 @@ using TehGM.Wolfringo.Messages;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 {
-    public class PictureSizeHandler : IHostedService
+    public class PictureSizeHandler : IHostedService, IDisposable
     {
         private readonly IHostedWolfClient _client;
         private readonly IHostEnvironment _environment;
@@ -32,6 +32,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         private static Regex _listenCommandRegex = new Regex(@"^listen(?:\s(\S*))?(?:\s(\S*)\b)?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private static Regex _postUrlCommandRegex = new Regex(@"^posturl(?:\s(\S*)\b)?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private static Regex _enableDisableCommandRegex = new Regex(@"^(enable|disable)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        private CancellationTokenSource _cts;
 
         public PictureSizeHandler(IHostedWolfClient client, 
             ILogger<PictureSizeHandler> logger, IHostEnvironment environment, IHttpClientFactory httpClientFactory,
@@ -68,11 +70,13 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             if (!_environment.IsProduction() && !message.IsPrivateMessage && message.RecipientID != 2790082)
                 return;
 
+            CancellationToken cancellationToken = _cts?.Token ?? default;
+
             try
             {
                 if (message.MimeType == ChatMessageTypes.ImageLink)
                 {
-                    await HandleImageCheckRequestAsync(message, message.Text, false).ConfigureAwait(false);
+                    await HandleImageCheckRequestAsync(message, message.Text, false, cancellationToken).ConfigureAwait(false);
                     return;
                 }
                 else if (message.MimeType == ChatMessageTypes.Text && message.TryGetCommandValue(_botOptions.CurrentValue, out string command))
@@ -84,22 +88,23 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     {
                         string url = command.Substring("check ".Length).TrimEnd();
                         if (!_urlMatchingRegex.IsMatch(url))
-                            await _client.RespondWithTextAsync(message, $"/alert Invalid URL: {url}").ConfigureAwait(false);
+                            await _client.RespondWithTextAsync(message, $"/alert Invalid URL: {url}", cancellationToken).ConfigureAwait(false);
                         else
-                            await HandleImageCheckRequestAsync(message, url, true).ConfigureAwait(false);
+                            await HandleImageCheckRequestAsync(message, url, true, cancellationToken).ConfigureAwait(false);
                     }
                     /* Select listen mode */
                     else if (_listenCommandRegex.TryGetMatch(command, out Match listenMatch))
-                        await CmdListenAsync(message, listenMatch).ConfigureAwait(false);
+                        await CmdListenAsync(message, listenMatch, cancellationToken).ConfigureAwait(false);
                     /* Enable/disable */
                     else if (_enableDisableCommandRegex.TryGetMatch(command, out Match enableDisableMatch))
-                        await CmdEnableDisableAsync(message, enableDisableMatch).ConfigureAwait(false);
+                        await CmdEnableDisableAsync(message, enableDisableMatch, cancellationToken).ConfigureAwait(false);
                     /* Switch posting image URL */
                     else if (_postUrlCommandRegex.TryGetMatch(command, out Match postUrlMatch))
-                        await CmdPostUrlAsync(message, postUrlMatch).ConfigureAwait(false);
+                        await CmdPostUrlAsync(message, postUrlMatch, cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
+            catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 using IDisposable logScope = _log.BeginScope(new Dictionary<string, object>()
@@ -115,20 +120,20 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         }
 
         #region Configuration
-        private async Task CmdListenAsync(ChatMessage message, Match regexMatch)
+        private async Task CmdListenAsync(ChatMessage message, Match regexMatch, CancellationToken cancellationToken = default)
         {
             // only work in groups
             if (message.IsPrivateMessage)
             {
-                await _client.RespondWithTextAsync(message, "/alert Listen modes are only supported in groups.").ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, "/alert Listen modes are only supported in groups.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // check user is admin or owner
-            WolfGroupMember member = await GetGroupMemberAsync(message).ConfigureAwait(false);
+            WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
             if (member?.HasAdminPrivileges != true)
             {
-                await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.").ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -137,12 +142,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             if (settingSwitch == SettingSwitch.Invalid)
             {
                 await _client.RespondWithTextAsync(message, "/alert Invalid switch.\r\n" +
-                    "Allowed values: on, true, enable, enabled, off, false, disable, disabled, toggle").ConfigureAwait(false);
+                    "Allowed values: on, true, enable, enabled, off, false, disable, disabled, toggle", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // get config
-            GroupConfig config = await GetConfigAsync<GroupConfig>(message).ConfigureAwait(false);
+            GroupConfig config = await GetConfigAsync<GroupConfig>(message, cancellationToken).ConfigureAwait(false);
 
             // change settings based on mode
             string mode = regexMatch.Groups[1]?.Value?.ToLowerInvariant();
@@ -156,67 +161,67 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                         $"Mods: {BoolToOnOff(config.ListenMods)}\r\n" +
                         $"Users: {BoolToOnOff(config.ListenUsers)}\r\n" +
                         $"Bots: {BoolToOnOff(config.ListenBots)}\r\n\r\n" +
-                        $"Automatic checking is currently {(config.IsEnabled ? "enabled" : "disabled")}.").ConfigureAwait(false);
+                        $"Automatic checking is currently {(config.IsEnabled ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
                     return;
                 // for help, send help message
                 case "help":
                     await _client.RespondWithTextAsync(message, "listen <mode> [switch]\r\n" +
                         "Mode (mandatory): admins, mods, users, bots\r\n" +
-                        "Switch (optional): on, off, toggle").ConfigureAwait(false);
+                        "Switch (optional): on, off, toggle", cancellationToken).ConfigureAwait(false);
                     return;
                 // process each of listen modes
                 case "admins":
                 case "admin":
                     config.ListenAdmins = GetSwitchedValue(config.ListenAdmins, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to admins set to {BoolToOnOff(config.ListenAdmins)} (y)").ConfigureAwait(false);
+                        $"Listening to admins set to {BoolToOnOff(config.ListenAdmins)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "mods":
                 case "mod":
                     config.ListenMods = GetSwitchedValue(config.ListenMods, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to mods set to {BoolToOnOff(config.ListenMods)} (y)").ConfigureAwait(false);
+                        $"Listening to mods set to {BoolToOnOff(config.ListenMods)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "users":
                 case "user":
                     config.ListenUsers = GetSwitchedValue(config.ListenUsers, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to users without role set to {BoolToOnOff(config.ListenUsers)} (y)").ConfigureAwait(false);
+                        $"Listening to users without role set to {BoolToOnOff(config.ListenUsers)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "bots":
                 case "bot":
                     config.ListenBots = GetSwitchedValue(config.ListenBots, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to bots set to {BoolToOnOff(config.ListenBots)} (y)").ConfigureAwait(false);
+                        $"Listening to bots set to {BoolToOnOff(config.ListenBots)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 default:
-                    await _client.RespondWithTextAsync(message, $"/alert Unknown listening mode: {mode}").ConfigureAwait(false);
+                    await _client.RespondWithTextAsync(message, $"/alert Unknown listening mode: {mode}", cancellationToken).ConfigureAwait(false);
                     return;
             }
 
             // save settings
-            await SaveConfigAsync(config).ConfigureAwait(false);
+            await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task CmdEnableDisableAsync(ChatMessage message, Match regexMatch)
+        private async Task CmdEnableDisableAsync(ChatMessage message, Match regexMatch, CancellationToken cancellationToken = default)
         {
             // work only in groups
             if (message.IsPrivateMessage)
             {
-                await _client.RespondWithTextAsync(message, "/alert Enabling and disabling is only supported in groups.").ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, "/alert Enabling and disabling is only supported in groups.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // check user is admin or owner
-            WolfGroupMember member = await GetGroupMemberAsync(message).ConfigureAwait(false);
+            WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
             if (member?.HasAdminPrivileges != true)
             {
-                await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.").ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // get config
-            GroupConfig config = await GetConfigAsync<GroupConfig>(message).ConfigureAwait(false);
+            GroupConfig config = await GetConfigAsync<GroupConfig>(message, cancellationToken).ConfigureAwait(false);
 
             // update setting
             switch (regexMatch.Groups[1].Value.ToLowerInvariant())
@@ -228,20 +233,20 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     config.IsEnabled = false;
                     break;
             }
-            await SaveConfigAsync(config).ConfigureAwait(false);
+            await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
             await _client.RespondWithTextAsync(message, 
-                $"/me Automatic size checking in this group has been {(config.IsEnabled ? "enabled" : "disabled")}.").ConfigureAwait(false);
+                $"/me Automatic size checking in this group has been {(config.IsEnabled ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task CmdPostUrlAsync(ChatMessage message, Match regexMatch)
+        private async Task CmdPostUrlAsync(ChatMessage message, Match regexMatch, CancellationToken cancellationToken = default)
         {
             // if is group, ensure user is admin or owner
             if (message.IsGroupMessage)
             {
-                WolfGroupMember member = await GetGroupMemberAsync(message).ConfigureAwait(false);
+                WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
                 if (member?.HasAdminPrivileges != true)
                 {
-                    await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.").ConfigureAwait(false);
+                    await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
@@ -251,23 +256,23 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             if (settingSwitch == SettingSwitch.Invalid)
             {
                 await _client.RespondWithTextAsync(message, "/alert Invalid switch.\r\n" +
-                    "Allowed values: on, true, enable, enabled, off, false, disable, disabled, toggle").ConfigureAwait(false);
+                    "Allowed values: on, true, enable, enabled, off, false, disable, disabled, toggle", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // get and update config
-            ITargetConfig config = await GetConfigAsync<ITargetConfig>(message).ConfigureAwait(false);
+            ITargetConfig config = await GetConfigAsync<ITargetConfig>(message, cancellationToken).ConfigureAwait(false);
             config.PostImageURL = GetSwitchedValue(config.PostImageURL, settingSwitch);
-            await SaveConfigAsync(config).ConfigureAwait(false);
-            await _client.RespondWithTextAsync(message, $"Posting image URLs {(config.PostImageURL ? "enabled" : "disabled")}.").ConfigureAwait(false);
+            await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
+            await _client.RespondWithTextAsync(message, $"Posting image URLs {(config.PostImageURL ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
         }
         #endregion
 
         #region Checking Image Size
-        private async Task HandleImageCheckRequestAsync(ChatMessage message, string imageUrl, bool isExplicitRequest)
+        private async Task HandleImageCheckRequestAsync(ChatMessage message, string imageUrl, bool isExplicitRequest, CancellationToken cancellationToken = default)
         {
-            ITargetConfig config = await GetConfigAsync<ITargetConfig>(message).ConfigureAwait(false);
-            if (!isExplicitRequest && !await CheckShouldCheckSizeAsync(message, config).ConfigureAwait(false))
+            ITargetConfig config = await GetConfigAsync<ITargetConfig>(message, cancellationToken).ConfigureAwait(false);
+            if (!isExplicitRequest && !await CheckShouldCheckSizeAsync(message, config, cancellationToken).ConfigureAwait(false))
                 return;
 
             using IDisposable logScope = _log.BeginScope(new Dictionary<string, object>()
@@ -281,11 +286,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             Image img = null;
             try
             {
-                img = await DownloadImageAsync(imageUrl).ConfigureAwait(false);
+                img = await DownloadImageAsync(imageUrl, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex.LogAsError(this._log, "Failed downloading image {ImageURL}"))
+            catch (Exception ex) when (ex.LogAsError(this._log, "Failed downloading image {ImageURL}", cancellationToken))
             {
-                await _client.RespondWithTextAsync(message, $"/alert Failed downloading image: {ex.Message}\r\nImage URL: {imageUrl}").ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, $"/alert Failed downloading image: {ex.Message}\r\nImage URL: {imageUrl}", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -300,10 +305,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 response += $"\r\nImage URL: {imageUrl}";
 
             // send the response
-            await _client.RespondWithTextAsync(message, response).ConfigureAwait(false);
+            await _client.RespondWithTextAsync(message, response, cancellationToken).ConfigureAwait(false);
         }
 
-        private async ValueTask<bool> CheckShouldCheckSizeAsync(ChatMessage message, ITargetConfig config)
+        private async ValueTask<bool> CheckShouldCheckSizeAsync(ChatMessage message, ITargetConfig config, CancellationToken cancellationToken = default)
         {
             _log.LogTrace("Determining if should check the image size");
             if (config is GroupConfig groupConfig)
@@ -313,7 +318,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     return false;
 
                 // check for all permissions
-                WolfGroupMember member = await GetGroupMemberAsync(message);
+                WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
                 if (groupConfig.ListenUsers && member.Capabilities == WolfGroupCapabilities.User)
                     return true;
                 if (groupConfig.ListenMods && member.Capabilities == WolfGroupCapabilities.Mod)
@@ -322,7 +327,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     return true;
                 if (groupConfig.ListenBots)
                 {
-                    WolfUser user = await _client.GetUserAsync(message.SenderID.Value);
+                    WolfUser user = await _client.GetUserAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
                     return user.Device == WolfDevice.Bot;
                 }
 
@@ -381,27 +386,27 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             On, Off, Toggle, Invalid
         }
 
-        private async Task<T> GetConfigAsync<T>(ChatMessage message) where T : class, ITargetConfig
+        private async Task<T> GetConfigAsync<T>(ChatMessage message, CancellationToken cancellationToken = default) where T : class, ITargetConfig
         {
             if (message.IsGroupMessage)
-                return await _groupConfigStore.GetGroupConfigAsync(message.RecipientID).ConfigureAwait(false) as T;
+                return await _groupConfigStore.GetGroupConfigAsync(message.RecipientID, cancellationToken).ConfigureAwait(false) as T;
             else
-                return await _userDataStore.GetUserDataAsync(message.SenderID.Value).ConfigureAwait(false) as T;
+                return await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false) as T;
         }
 
-        private Task SaveConfigAsync(ITargetConfig config)
+        private Task SaveConfigAsync(ITargetConfig config, CancellationToken cancellationToken = default)
         {
             if (config is GroupConfig groupConfig)
-                return _groupConfigStore.SetGroupConfigAsync(groupConfig);
+                return _groupConfigStore.SetGroupConfigAsync(groupConfig, cancellationToken);
             else if (config is UserData userData)
-                return _userDataStore.SetUserDataAsync(userData);
+                return _userDataStore.SetUserDataAsync(userData, cancellationToken);
             return Task.CompletedTask;
         }
         #endregion
 
-        private async Task<WolfGroupMember> GetGroupMemberAsync(ChatMessage message)
+        private async Task<WolfGroupMember> GetGroupMemberAsync(ChatMessage message, CancellationToken cancellationToken = default)
         {
-            WolfGroup group = await _client.GetGroupAsync(message.RecipientID).ConfigureAwait(false);
+            WolfGroup group = await _client.GetGroupAsync(message.RecipientID, cancellationToken).ConfigureAwait(false);
             return group?.Members[message.SenderID.Value];
         }
 
@@ -413,21 +418,35 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         public PictureSize Verify(Size size)
             => new PictureSize(size.Width, size.Height, _picSizeOptions.CurrentValue.MinimumValidSize, _picSizeOptions.CurrentValue.MaximumValidSize);
 
-        private async Task<Image> DownloadImageAsync(string imageUrl)
+        private async Task<Image> DownloadImageAsync(string imageUrl, CancellationToken cancellationToken = default)
         {
             _log.LogDebug("Downloading image from {ImageURL}", imageUrl);
             HttpClient client = _httpClientFactory.CreateClient();
             using Stream imageStream = await client.GetStreamAsync(imageUrl).ConfigureAwait(false);
             using MemoryStream memoryStream = new MemoryStream();
-            await imageStream.CopyToAsync(memoryStream).ConfigureAwait(false);
+            await imageStream.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
             return Image.FromStream(memoryStream);
         }
         #endregion
 
         // Implementing IHostedService ensures this class is created on start
         Task IHostedService.StartAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        {
+            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            return Task.CompletedTask;
+        }
         Task IHostedService.StopAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        {
+            this.Dispose();
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            this._client?.RemoveMessageListener<ChatMessage>(OnChatMessage);
+            this._cts?.Cancel();
+            this._cts?.Dispose();
+            this._cts = null;
+        }
     }
 }
