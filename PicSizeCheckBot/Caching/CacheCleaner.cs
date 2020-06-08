@@ -35,7 +35,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching
             });
         }
 
-        private async Task AutoClearLoopAsync<TKey, TEntity>(IEntityCache<TKey, TEntity> cache, string optionsName, CancellationToken cancellationToken = default) where TEntity : IEntity<TKey>
+        private async Task AutoClearLoopAsync<TKey, TEntity>(IEntityCache<TKey, TEntity> cache, string optionsName, 
+            CancellationToken cancellationToken = default) where TEntity : IEntity<TKey>
         {
             CachingOptions options = _cachingOptions.Get(optionsName);
 

@@ -35,6 +35,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.Configure<HostedWolfClientOptions>(context.Configuration.GetSection("WolfClient"));
                     services.Configure<PictureSizeOptions>(context.Configuration.GetSection("PictureSize"));
                     services.Configure<DatabaseOptions>(context.Configuration.GetSection("Database"));
+                    services.Configure<CachingOptions>(UserDataCache.OptionName, context.Configuration.GetSection("Caching:" + UserDataCache.OptionName));
+                    services.Configure<CachingOptions>(GroupConfigCache.OptionName, context.Configuration.GetSection("Caching:" + GroupConfigCache.OptionName));
 
                     // add framework services
                     services.AddHttpClient();

@@ -7,10 +7,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching
     public interface IUserDataCache : IEntityCache<uint, UserData> { }
     public class UserDataCache : EntityCache<uint, UserData>, IUserDataCache
     {
+        public const string OptionName = "UserData";
+
         private readonly IOptionsMonitor<CachingOptions> _cachingOptions;
 
-        private bool _enabled => _cachingOptions.Get("UserData").Enable;
-        private TimeSpan _expirationTime => _cachingOptions.Get("UserData").Lifetime;
+        private bool _enabled => _cachingOptions.Get(OptionName).Enable;
+        private TimeSpan _expirationTime => _cachingOptions.Get(OptionName).Lifetime;
 
         public UserDataCache(IOptionsMonitor<CachingOptions> cachingOptions)
         {

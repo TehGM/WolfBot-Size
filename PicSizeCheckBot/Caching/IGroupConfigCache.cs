@@ -7,10 +7,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching
     public interface IGroupConfigCache : IEntityCache<uint, GroupConfig> { }
     public class GroupConfigCache : EntityCache<uint, GroupConfig>, IGroupConfigCache
     {
+        public const string OptionName = "GroupConfig";
+
         private readonly IOptionsMonitor<CachingOptions> _cachingOptions;
 
-        private bool _enabled => _cachingOptions.Get("GroupConfig").Enable;
-        private TimeSpan _expirationTime => _cachingOptions.Get("GroupConfig").Lifetime;
+        private bool _enabled => _cachingOptions.Get(OptionName).Enable;
+        private TimeSpan _expirationTime => _cachingOptions.Get(OptionName).Lifetime;
 
         public GroupConfigCache(IOptionsMonitor<CachingOptions> cachingOptions)
         {
