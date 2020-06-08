@@ -174,25 +174,25 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 case "admin":
                     config.ListenAdmins = GetSwitchedValue(config.ListenAdmins, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to admins set to {BoolToOnOff(config.ListenAdmins)} (y)", cancellationToken).ConfigureAwait(false);
+                        $"/me Listening to admins set to {BoolToOnOff(config.ListenAdmins)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "mods":
                 case "mod":
                     config.ListenMods = GetSwitchedValue(config.ListenMods, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to mods set to {BoolToOnOff(config.ListenMods)} (y)", cancellationToken).ConfigureAwait(false);
+                        $"/me Listening to mods set to {BoolToOnOff(config.ListenMods)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "users":
                 case "user":
                     config.ListenUsers = GetSwitchedValue(config.ListenUsers, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to users without role set to {BoolToOnOff(config.ListenUsers)} (y)", cancellationToken).ConfigureAwait(false);
+                        $"/me Listening to users without role set to {BoolToOnOff(config.ListenUsers)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "bots":
                 case "bot":
                     config.ListenBots = GetSwitchedValue(config.ListenBots, settingSwitch);
                     await _client.RespondWithTextAsync(message, 
-                        $"Listening to bots set to {BoolToOnOff(config.ListenBots)} (y)", cancellationToken).ConfigureAwait(false);
+                        $"/me Listening to bots set to {BoolToOnOff(config.ListenBots)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 default:
                     await _client.RespondWithTextAsync(message, $"/alert Unknown listening mode: {mode}", cancellationToken).ConfigureAwait(false);
@@ -264,7 +264,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             ITargetConfig config = await GetConfigAsync<ITargetConfig>(message, cancellationToken).ConfigureAwait(false);
             config.PostImageURL = GetSwitchedValue(config.PostImageURL, settingSwitch);
             await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
-            await _client.RespondWithTextAsync(message, $"Posting image URLs {(config.PostImageURL ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
+            await _client.RespondWithTextAsync(message, $"/me Posting image URLs {(config.PostImageURL ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
         }
         #endregion
 
