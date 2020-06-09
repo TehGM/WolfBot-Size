@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,6 +89,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                     case "show":
                         cmdMethod = CmdShowAsync;
                         break;
+                    default:
+                        cmdMethod = CmdAddAsync;
+                        break;
                 }
 
                 await cmdMethod(message, queueName, args, cancellationToken).ConfigureAwait(false);
@@ -147,13 +151,53 @@ cancellationToken).ConfigureAwait(false);
         /* ADD */
         private async Task CmdAddAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
+            IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            if (queue == null)
+                return;         // if null, it means it's a forbidden name
 
+            string[] argsSplit = args.Split(_queuesOptions.CurrentValue.IdSplitCharacters, StringSplitOptions.RemoveEmptyEntries);
+            HashSet<string> needsRevisit = new HashSet<string>();
+            int addedCount = 0;
+            int skippedCount = 0;
+            for (int i = 0; i < argsSplit.Length; i++)
+            {
+                string idValue = argsSplit[i];
+                if (uint.TryParse(idValue, out uint id))
+                {
+                    if (queue.QueuedIDs.Contains(id))
+                        skippedCount++;
+                    else
+                    {
+                        queue.QueuedIDs.Enqueue(id);
+                        addedCount++;
+                    }
+                }
+                else if (idValue.Any(char.IsDigit))
+                    needsRevisit.Add(idValue);
+            }
+
+            if (!await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false))
+                return;
+
+            StringBuilder builder = new StringBuilder();
+            if (addedCount > 0)
+                builder.AppendFormat("(y) Added {0} IDs to {1} queue.", addedCount.ToString(), queue.Name);
+            else
+                builder.AppendFormat("(n) No ID added to {0} queue.", queue.Name);
+            if (skippedCount > 0)
+                builder.AppendFormat("\r\n{0} IDs already exist on the queue so were skipped.", skippedCount.ToString());
+            if (needsRevisit.Count > 0)
+                builder.AppendFormat("\r\n(n) {0} values weren't valid IDs, but contain digits - please revisit: {1}", needsRevisit.Count.ToString(), string.Join(", ", needsRevisit));
+
+            await _client.RespondWithTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
         }
 
         /* SHOW */
         private async Task CmdShowAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
             IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            if (queue == null)
+                return;         // if null, it means it's a forbidden name
 
             if (queue.QueuedIDs?.Any() == true)
             {
@@ -175,6 +219,8 @@ cancellationToken).ConfigureAwait(false);
         private async Task CmdClearAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
             IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            if (queue == null)
+                return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue
             if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
@@ -198,6 +244,8 @@ cancellationToken).ConfigureAwait(false);
         private async Task CmdRenameAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
             IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            if (queue == null)
+                return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue
             if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
@@ -228,7 +276,7 @@ cancellationToken).ConfigureAwait(false);
             }
 
             // check new queue name doesn't yet exist
-            IdQueue existingQueue = await _idQueueStore.GetIdQueueByNameAsync(args.Trim(), cancellationToken).ConfigureAwait(false);
+            IdQueue existingQueue = await _idQueueStore.GetIdQueueByNameAsync(newName, cancellationToken).ConfigureAwait(false);
             if (existingQueue != null)
             {
                 await _client.RespondWithTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists.", cancellationToken).ConfigureAwait(false);
