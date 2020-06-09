@@ -89,6 +89,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                     case "show":
                         cmdMethod = CmdShowAsync;
                         break;
+                    case "remove":
+                        cmdMethod = CmdRemoveAsync;
+                        break;
                     default:
                         cmdMethod = CmdAddAsync;
                         break;
@@ -116,7 +119,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
 `{0}<queue name> queue transfer <user ID>` - transfers ownership of queue to user with specified ID
 `{0}<queue name> info` - shows info about queue
 
-`clear`, `rename` and `transfer` can only be used if you own the queue.
+`clear` and `remove` can only be used on your own queue, or a queue without an owner.
+`rename` and `transfer` can only be used if you own the queue.
 `claim` can only be used if the queue isn't already claimed. You can check that using `info`.
 
 For bug reports or suggestions, contact {1} (ID: {2})",
@@ -155,30 +159,26 @@ cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
-            string[] argsSplit = args.Split(_queuesOptions.CurrentValue.IdSplitCharacters, StringSplitOptions.RemoveEmptyEntries);
-            HashSet<string> needsRevisit = new HashSet<string>();
+            // perform adding
+            (HashSet<uint> ids, HashSet<string> needsRevisit) = GetIDsFromArgs(args);
             int addedCount = 0;
             int skippedCount = 0;
-            for (int i = 0; i < argsSplit.Length; i++)
+            foreach (uint i in ids)
             {
-                string idValue = argsSplit[i];
-                if (uint.TryParse(idValue, out uint id))
+                if (queue.QueuedIDs.Contains(i))
+                    skippedCount++;
+                else
                 {
-                    if (queue.QueuedIDs.Contains(id))
-                        skippedCount++;
-                    else
-                    {
-                        queue.QueuedIDs.Enqueue(id);
-                        addedCount++;
-                    }
+                    queue.QueuedIDs.Enqueue(i);
+                    addedCount++;
                 }
-                else if (idValue.Any(char.IsDigit))
-                    needsRevisit.Add(idValue);
             }
 
+            // save queue
             if (!await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false))
                 return;
 
+            // build response
             StringBuilder builder = new StringBuilder();
             if (addedCount > 0)
                 builder.AppendFormat("(y) Added {0} IDs to {1} queue.", addedCount.ToString(), queue.Name);
@@ -187,8 +187,9 @@ cancellationToken).ConfigureAwait(false);
             if (skippedCount > 0)
                 builder.AppendFormat("\r\n{0} IDs already exist on the queue so were skipped.", skippedCount.ToString());
             if (needsRevisit.Count > 0)
-                builder.AppendFormat("\r\n(n) {0} values weren't valid IDs, but contain digits - please revisit: {1}", needsRevisit.Count.ToString(), string.Join(", ", needsRevisit));
+                builder.AppendFormat("\r\n(n) {0} values weren't valid IDs, but contain digits, so may need revisiting: {1}", needsRevisit.Count.ToString(), string.Join(", ", needsRevisit));
 
+            // send response
             await _client.RespondWithTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
         }
 
@@ -212,7 +213,44 @@ cancellationToken).ConfigureAwait(false);
         /* REMOVE */
         private async Task CmdRemoveAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
+            IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            if (queue == null)
+                return;         // if null, it means it's a forbidden name
 
+            // check if this is owner's queue
+            if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
+            {
+                // if not, check if bot admin
+                UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
+                if (user.IsBotAdmin)
+                {
+                    await _client.RespondWithTextAsync(message, "(n) To remove from a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+            }
+
+            // perform removing
+            (HashSet<uint> ids, HashSet<string> needsRevisit) = GetIDsFromArgs(args);
+            int previousCount = queue.QueuedIDs.Count;
+            queue.QueuedIDs = new Queue<uint>(queue.QueuedIDs.Where(i => !ids.Contains(i)));
+
+            // save queue
+            if (!await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false))
+                return;
+
+            // build response
+            int removedCount = previousCount - queue.QueuedIDs.Count;
+            int skippedCount = ids.Count - previousCount;
+            StringBuilder builder = new StringBuilder();
+            if (removedCount > 0)
+                builder.AppendFormat("(y) Removed {0} IDs from {1} queue.", removedCount.ToString(), queue.Name);
+            else
+                builder.AppendFormat("(n) No ID added to {0} queue.", queue.Name);
+            if (skippedCount > 0)
+                builder.AppendFormat("\r\n{0} IDs did not exist on the queue so were skipped.", skippedCount.ToString());
+
+            // send response
+            await _client.RespondWithTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
         }
 
         /* CLEAR */
@@ -324,6 +362,23 @@ cancellationToken).ConfigureAwait(false);
 
 
         #region Helpers
+        private (HashSet<uint> ids, HashSet<string> revisit) GetIDsFromArgs(string args)
+        {
+            string[] argsSplit = args.Split(_queuesOptions.CurrentValue.IdSplitCharacters, StringSplitOptions.RemoveEmptyEntries);
+            HashSet<string> needsRevisit = new HashSet<string>();
+            HashSet<uint> ids = new HashSet<uint>(argsSplit.Length);
+            for (int i = 0; i < argsSplit.Length; i++)
+            {
+                string idValue = argsSplit[i];
+                if (uint.TryParse(idValue, out uint id))
+                    ids.Add(id);
+                else if (idValue.Any(char.IsDigit))
+                    needsRevisit.Add(idValue);
+            }
+
+            return (ids, needsRevisit);
+        }
+
         private async Task<bool> SaveQueueAsync(ChatMessage message, IdQueue queue, CancellationToken cancellationToken = default)
         {
             try
