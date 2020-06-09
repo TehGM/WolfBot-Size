@@ -22,12 +22,13 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private readonly IOptionsMonitor<QueuesSystemOptions> _queuesOptions;
         private readonly IOptionsMonitor<BotOptions> _botOptions;
         private readonly IIdQueueStore _idQueueStore;
+        private readonly IUserDataStore _userDataStore;
         private readonly ILogger _log;
 
         private CancellationTokenSource _cts;
         private readonly Regex _queueCommandRegex = new Regex(@"^(.+)?\squeue(?:\s([A-Za-z]+))?(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        public QueuesSystemHandler(IHostedWolfClient client, IIdQueueStore idQueueStore,
+        public QueuesSystemHandler(IHostedWolfClient client, IIdQueueStore idQueueStore, IUserDataStore userDataStore,
             IOptionsMonitor<QueuesSystemOptions> queuesOptions, IOptionsMonitor<BotOptions> botOptions, ILogger<QueuesSystemHandler> logger)
         {
             // store all services
@@ -36,6 +37,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             this._queuesOptions = queuesOptions;
             this._client = client;
             this._idQueueStore = idQueueStore;
+            this._userDataStore = userDataStore;
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
@@ -70,7 +72,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                     case null:
                     case "":
                     case "next":
-                        await CmdNextAsync(message, queueName, args, cancellationToken);
+                        await CmdNextAsync(message, queueName, args, cancellationToken).ConfigureAwait(false);
+                        break;
+                    case "clear":
+                        await CmdClearAsync(message, queueName, args, cancellationToken).ConfigureAwait(false);
                         break;
                 }
             }
@@ -107,16 +112,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
 
             uint gameID = queue.QueuedIDs.Dequeue();
             await SendShowCommandAsync(message.RecipientID, gameID, cancellationToken).ConfigureAwait(false);
-            try
-            {
-                await _idQueueStore.SetIdQueueAsync(queue, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, "Failed saving queue {QUeueName} in the database", queue.Name);
-                await _client.RespondWithTextAsync(message, $"/alert Failed saving queue '{queue.Name}' in the database.", cancellationToken).ConfigureAwait(false);
-                return;
-            }
+            await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* ADD */
@@ -134,7 +130,21 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         /* CLEAR */
         private async Task CmdClearAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
+            IdQueue queue = await GetQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
 
+            // check if this is owner's queue
+            if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
+            {
+                // if not, check if bot admin
+                UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
+                if (user.IsBotAdmin)
+                {
+                    await _client.RespondWithTextAsync(message, "/alert To clear a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+            }
+
+            await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* RENAME */
@@ -152,6 +162,22 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
 
 
         #region Helpers
+        private async Task<bool> SaveQueueAsync(ChatMessage message, IdQueue queue, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _idQueueStore.SetIdQueueAsync(queue, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed saving queue {QueueName} in the database", queue.Name);
+                if (message != null)
+                    await _client.RespondWithTextAsync(message, $"/alert Failed saving queue '{queue.Name}' in the database.", cancellationToken).ConfigureAwait(false);
+                return false;
+            }
+        }
+
         private async Task<IdQueue> GetQueueAsync(ChatMessage message, string name, CancellationToken cancellationToken = default)
         {
             // first try to get existing queue
