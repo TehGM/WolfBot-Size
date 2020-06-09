@@ -217,16 +217,11 @@ cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
-            // check if this is owner's queue
-            if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
+            // check if this is owner's queue, or user is bot admin
+            if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
-                // if not, check if bot admin
-                UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
-                if (user.IsBotAdmin)
-                {
-                    await _client.RespondWithTextAsync(message, "(n) To remove from a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
-                    return;
-                }
+                await _client.RespondWithTextAsync(message, "(n) To remove from a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                return;
             }
 
             // perform removing
@@ -260,16 +255,11 @@ cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
-            // check if this is owner's queue
-            if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
+            // check if this is owner's queue, or user is bot admin
+            if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
-                // if not, check if bot admin
-                UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
-                if (user.IsBotAdmin)
-                {
-                    await _client.RespondWithTextAsync(message, "(n) To clear a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, "(n) To clear a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
-                }
             }
 
             int idCount = queue.QueuedIDs.Count;
@@ -285,16 +275,11 @@ cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
-            // check if this is owner's queue
-            if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
+            // check if this is owner's queue, or user is bot admin
+            if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
-                // if not, check if bot admin
-                UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
-                if (user.IsBotAdmin)
-                {
-                    await _client.RespondWithTextAsync(message, "(n) To rename a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, "(n) To rename a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
-                }
             }
 
             string newName = args.Trim();
@@ -329,7 +314,16 @@ cancellationToken).ConfigureAwait(false);
         /* ASSIGN */
         private async Task CmdTransferAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
+            IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            if (queue == null)
+                return;         // if null, it means it's a forbidden name
 
+            // check if this is owner's queue, or user is bot admin
+            if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
+            {
+                await _client.RespondWithTextAsync(message, "(n) To transfer a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
         }
 
         /* INFO */
@@ -362,6 +356,19 @@ cancellationToken).ConfigureAwait(false);
 
 
         #region Helpers
+        private async Task<bool> IsQueueOwnerOrBotAdmin(IdQueue queue, uint userID, CancellationToken cancellationToken = default)
+        {
+            // check if this is owner's queue
+            if (queue.OwnerID != null && queue.OwnerID.Value != userID)
+                return true;
+            // if not, check if bot admin
+            UserData user = await _userDataStore.GetUserDataAsync(userID, cancellationToken).ConfigureAwait(false);
+            if (user.IsBotAdmin)
+                return true;
+            // if checks failed, is not owner or admin
+            return false;
+        }
+
         private (HashSet<uint> ids, HashSet<string> revisit) GetIDsFromArgs(string args)
         {
             string[] argsSplit = args.Split(_queuesOptions.CurrentValue.IdSplitCharacters, StringSplitOptions.RemoveEmptyEntries);
