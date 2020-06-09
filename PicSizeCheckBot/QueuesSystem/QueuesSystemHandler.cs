@@ -71,8 +71,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
 
                 switch (commandSwitch)
                 {
-                    case null:
-                    case "":
+                    case null when (string.IsNullOrWhiteSpace(args)):
+                    case "" when (string.IsNullOrWhiteSpace(args)):
                     case "next":
                         cmdMethod = CmdNextAsync;
                         break;
@@ -84,6 +84,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                         break;
                     case "info":
                         cmdMethod = CmdInfoAsync;
+                        break;
+                    case "show":
+                        cmdMethod = CmdShowAsync;
                         break;
                 }
 
@@ -97,7 +100,24 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         /* HELP */
         private async Task CmdHelpAsync(ChatMessage message, CancellationToken cancellationToken = default)
         {
+            WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
+            await _client.RespondWithTextAsync(message, string.Format(@"Queue commands:
+`{0}<queue name> queue next` - pulls the next ID from <queue name>
+`{0}<queue name> queue add <IDs>` - adds IDs to the queue
+`{0}<queue name> queue show` - shows all IDs on the queue
+`{0}<queue name> queue remove <IDs>` - removes selected IDs from the queue
+`{0}<queue name> queue clear` - removes all IDs from the queue
+`{0}<queue name> queue rename <new name>` - changes name of the queue to <new name>
+`{0}<queue name> queue claim` - claims the queue, so you can use ""my"" as it's name
+`{0}<queue name> queue transfer <user ID>` - transfers ownership of queue to user with specified ID
+`{0}<queue name> info` - shows info about queue
 
+`clear`, `rename` and `transfer` can only be used if you own the queue.
+`claim` can only be used if the queue isn't already claimed. You can check that using `info`.
+
+For bug reports or suggestions, contact {1} (ID: {2})",
+_botOptions.CurrentValue.CommandPrefix, owner.Nickname, owner.ID),
+cancellationToken).ConfigureAwait(false);
         }
 
         /* NEXT */
@@ -131,6 +151,21 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         }
 
         /* SHOW */
+        private async Task CmdShowAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
+        {
+            IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+
+            if (queue.QueuedIDs?.Any() == true)
+            {
+                await _client.RespondWithTextAsync(message, $"{queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            bool plural = queue.QueuedIDs.Count > 1;
+            await _client.RespondWithTextAsync(message, $"Currently there {(plural ? "are" : "is")} {queue.QueuedIDs.Count} ID{(plural ? "s" : "")} on {queueName} queue:\r\n{string.Join(", ", queue.QueuedIDs)}");
+        }
+
+        /* REMOVE */
         private async Task CmdRemoveAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
 
@@ -206,7 +241,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         }
 
         /* ASSIGN */
-        private async Task CmdAssignAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
+        private async Task CmdTransferAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
 
         }
