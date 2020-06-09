@@ -144,7 +144,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 }
             }
 
+            int idCount = queue.QueuedIDs.Count;
             queue.QueuedIDs.Clear();
+            await _client.RespondWithTextAsync(message, $"/me {idCount} ID{(idCount > 1 ? "s" : "")} removed from queue \"{queue.Name}\" .", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
