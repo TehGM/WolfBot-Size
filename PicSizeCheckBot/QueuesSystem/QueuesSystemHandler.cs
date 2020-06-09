@@ -77,6 +77,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                     case "clear":
                         await CmdClearAsync(message, queueName, args, cancellationToken).ConfigureAwait(false);
                         break;
+                    case "rename":
+                        await CmdClearAsync(message, queueName, args, cancellationToken).ConfigureAwait(false);
+                        break;
                 }
             }
             catch (TaskCanceledException) { }
@@ -96,7 +99,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         {
             if (message.IsPrivateMessage)
             {
-                await _client.RespondWithTextAsync(message, $"/alert This command can only be used in groups.", cancellationToken).ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, $"(n) This command can only be used in groups.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -139,14 +142,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
                 if (user.IsBotAdmin)
                 {
-                    await _client.RespondWithTextAsync(message, "/alert To clear a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                    await _client.RespondWithTextAsync(message, "(n) To clear a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
 
             int idCount = queue.QueuedIDs.Count;
             queue.QueuedIDs.Clear();
-            await _client.RespondWithTextAsync(message, $"/me {idCount} ID{(idCount > 1 ? "s" : "")} removed from queue \"{queue.Name}\" .", cancellationToken).ConfigureAwait(false);
+            await _client.RespondWithTextAsync(message, $"(y) {idCount} ID{(idCount > 1 ? "s" : "")} removed from queue \"{queue.Name}\" .", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -162,7 +165,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
                 if (user.IsBotAdmin)
                 {
-                    await _client.RespondWithTextAsync(message, "/alert To rename a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                    await _client.RespondWithTextAsync(message, "(n) To rename a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
@@ -172,14 +175,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             // check same name
             if (newName.Equals(queue.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await _client.RespondWithTextAsync(message, $"Queue is already named \"{newName}\".", cancellationToken).ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, $"(n) Queue is already named \"{newName}\".", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // check forbidden name
             if (IsQueueNameForbidden(newName))
             {
-                await _client.RespondWithTextAsync(message, $"/alert Queue name \"{newName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, $"(n) Queue name \"{newName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -187,12 +190,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             IdQueue existingQueue = await _idQueueStore.GetIdQueueByNameAsync(args.Trim(), cancellationToken).ConfigureAwait(false);
             if (existingQueue != null)
             {
-                await _client.RespondWithTextAsync(message, $"/alert Queue \"{existingQueue.Name}\" already exists.", cancellationToken).ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             queue.Name = newName;
-            await _client.RespondWithTextAsync(message, $"/me Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
+            await _client.RespondWithTextAsync(message, $"(y) Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -200,6 +203,33 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private async Task CmdAssignAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
 
+        }
+
+        /* INFO */
+        private async Task CmdInfoAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
+        {
+            IdQueue queue = await GetQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+
+            if (queue == null)
+            {
+                if (queueName.Equals("my", StringComparison.OrdinalIgnoreCase))
+                    await _client.RespondWithTextAsync(message, "(n) Your queue not found.", cancellationToken).ConfigureAwait(false);
+                else
+                    await _client.RespondWithTextAsync(message, $"(n) Queue {queueName} not found.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            WolfUser user = null;
+            if (queue.OwnerID != null)
+                await _client.GetUserAsync(queue.OwnerID.Value, cancellationToken).ConfigureAwait(false);
+
+            await _client.RespondWithTextAsync(message,
+                $"Name: {queue.Name}\r\n" +
+                $"Owner ID: {(queue.OwnerID != null ? queue.OwnerID.ToString() : "-")}\r\n" +
+                $"Owner: {(user != null ? user.Nickname : "-")}\r\n" +
+                $"ID Count: {queue.QueuedIDs?.Count ?? 0}\r\n" +
+                $"\r\nID: {queue.ID}",
+                cancellationToken).ConfigureAwait(false);
         }
         #endregion
 
@@ -212,9 +242,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 await _idQueueStore.SetIdQueueAsync(queue, cancellationToken).ConfigureAwait(false);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex.LogAsError(_log, "Failed saving queue {QueueName} in the database", queue.Name))
             {
-                _log.LogError(ex, "Failed saving queue {QueueName} in the database", queue.Name);
                 if (message != null)
                     await _client.RespondWithTextAsync(message, $"/alert Failed saving queue '{queue.Name}' in the database.", cancellationToken).ConfigureAwait(false);
                 return false;
@@ -224,18 +253,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private async Task<IdQueue> GetOrCreateQueueAsync(ChatMessage message, string name, CancellationToken cancellationToken = default)
         {
             // first try to get existing queue
-            if (name.Equals("my", StringComparison.OrdinalIgnoreCase))
-            {
-                IdQueue existingQueue = await _idQueueStore.GetIdQueueByOwnerAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
-                if (existingQueue != null)
-                    return existingQueue;
-            }
-            else
-            {
-                IdQueue existingQueue = await _idQueueStore.GetIdQueueByNameAsync(name, cancellationToken).ConfigureAwait(false);
-                if (existingQueue != null)
-                    return existingQueue;
-            }
+            IdQueue result = await GetQueueAsync(message, name, cancellationToken).ConfigureAwait(false);
+            if (result != null)
+                return result;
 
             // if not exist, resolve name for new queue
             bool claiming = false;
@@ -250,7 +270,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             // check forbidden name
             if (IsQueueNameForbidden(queueName))
             {
-                await _client.RespondWithTextAsync(message, $"/alert Queue name \"{queueName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
+                await _client.RespondWithTextAsync(message, $"(n) Queue name \"{queueName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
                 return null;
             }
 
@@ -261,22 +281,38 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 if (existingQueue != null)
                 {
                     if (existingQueue.OwnerID == null)
-                        await _client.RespondWithTextAsync(message, $"/alert Queue \"{existingQueue.Name}\" already exists, but is not claimed by you.\r\n" +
+                        await _client.RespondWithTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists, but is not claimed by you.\r\n" +
                             $"Use '{_botOptions.CurrentValue.CommandPrefix}{queueName}queue claim' to set as yours!", cancellationToken).ConfigureAwait(false);
                     else
                     {
                         WolfUser queueOwner = await _client.GetUserAsync(existingQueue.OwnerID.Value, cancellationToken).ConfigureAwait(false);
-                        await _client.RespondWithTextAsync(message, $"/alert Queue \"{existingQueue.Name}\" already exists, but is claimed by {queueOwner.Nickname}. :(", cancellationToken).ConfigureAwait(false);
+                        await _client.RespondWithTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists, but is claimed by {queueOwner.Nickname}. :(", cancellationToken).ConfigureAwait(false);
                     }
                     return null;
                 }
             }
 
             // if all checks succeeded, we can create a new one
-            IdQueue result = new IdQueue(queueName);
+            result = new IdQueue(queueName);
             if (claiming)
                 result.OwnerID = message.SenderID.Value;
             return result;
+        }
+
+        private async Task<IdQueue> GetQueueAsync(ChatMessage message, string name, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (name.Equals("my", StringComparison.OrdinalIgnoreCase))
+                    return await _idQueueStore.GetIdQueueByOwnerAsync(message.SenderID.Value, cancellationToken);
+                else
+                    return await _idQueueStore.GetIdQueueByNameAsync(name, cancellationToken);
+            }
+            catch (Exception)
+            {
+                await _client.RespondWithTextAsync(message, "/alert Failed retrieving queue from database.", cancellationToken).ConfigureAwait(false);
+                throw;
+            }
         }
 
         private bool IsQueueNameForbidden(string queueName)
