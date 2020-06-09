@@ -17,7 +17,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         private IMongoCollection<IdQueue> _idQueuesCollection;
         private readonly ReplaceOptions _replaceOptions;
         private readonly IIdQueueCache _cache;
-        private readonly MongoDelayedBatchInserter<string, IdQueue> _batchInserter;
+        private readonly MongoDelayedBatchInserter<Guid, IdQueue> _batchInserter;
         private readonly IDisposable _hostStoppingRegistration;
 
         public MongoIdQueuesStore(IMongoConnection databaseConnection, IOptionsMonitor<DatabaseOptions> databaseOptions, IHostApplicationLifetime hostLifetime,
@@ -27,7 +27,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             this._log = logger;
             this._cache = cache;
             this._replaceOptions = new ReplaceOptions() { IsUpsert = true, BypassDocumentValidation = false };
-            this._batchInserter = new MongoDelayedBatchInserter<string, IdQueue>(TimeSpan.FromMinutes(10), StringComparer.OrdinalIgnoreCase);
+            this._batchInserter = new MongoDelayedBatchInserter<Guid, IdQueue>(TimeSpan.FromMinutes(10));
 
             this._hostStoppingRegistration = hostLifetime.ApplicationStopping.Register(_batchInserter.Flush);
         }
@@ -85,7 +85,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         {
             _log.LogTrace("Inserting IDs queue {QueueName} into database", queue.Name);
             _cache.AddOrReplace(queue);
-            return _batchInserter.BatchAsync(queue.Name, new MongoDelayedInsert<IdQueue>(dbQueue => dbQueue.Name.ToLowerInvariant() == queue.Name.ToLowerInvariant(), queue, _replaceOptions));
+            return _batchInserter.BatchAsync(queue.ID, new MongoDelayedInsert<IdQueue>(dbQueue => dbQueue.ID == queue.ID, queue, _replaceOptions));
         }
 
         public override void Dispose()
