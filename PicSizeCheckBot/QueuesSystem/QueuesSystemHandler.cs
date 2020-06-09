@@ -110,7 +110,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private async Task CmdHelpAsync(ChatMessage message, CancellationToken cancellationToken = default)
         {
             WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
-            await _client.RespondWithTextAsync(message, string.Format(@"Queue commands:
+            await _client.ReplyTextAsync(message, string.Format(@"Queue commands:
 `{0}<queue name> queue next` - pulls the next ID from <queue name>
 `{0}<queue name> queue add <IDs>` - adds IDs to the queue
 `{0}<queue name> queue show` - shows all IDs on the queue
@@ -135,7 +135,7 @@ cancellationToken).ConfigureAwait(false);
         {
             if (message.IsPrivateMessage)
             {
-                await _client.RespondWithTextAsync(message, $"(n) This command can only be used in groups.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) This command can only be used in groups.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -145,7 +145,7 @@ cancellationToken).ConfigureAwait(false);
                 return;         // if null, it means it's a forbidden name
             if (!queue.QueuedIDs.Any())
             {
-                await _client.RespondWithTextAsync(message, $"Queue {queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"Queue {queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -188,7 +188,7 @@ cancellationToken).ConfigureAwait(false);
                 builder.AppendFormat("\r\n(n) {0} values weren't valid IDs, but contain digits, so may need revisiting: {1}", needsRevisit.Count.ToString(), string.Join(", ", needsRevisit));
 
             // send response
-            await _client.RespondWithTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -201,12 +201,12 @@ cancellationToken).ConfigureAwait(false);
 
             if (queue.QueuedIDs?.Any() == true)
             {
-                await _client.RespondWithTextAsync(message, $"{queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"{queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             bool plural = queue.QueuedIDs.Count > 1;
-            await _client.RespondWithTextAsync(message, $"Currently there {(plural ? "are" : "is")} {queue.QueuedIDs.Count} ID{(plural ? "s" : "")} on {queueName} queue:\r\n{string.Join(", ", queue.QueuedIDs)}");
+            await _client.ReplyTextAsync(message, $"Currently there {(plural ? "are" : "is")} {queue.QueuedIDs.Count} ID{(plural ? "s" : "")} on {queueName} queue:\r\n{string.Join(", ", queue.QueuedIDs)}");
         }
 
         /* REMOVE */
@@ -219,7 +219,7 @@ cancellationToken).ConfigureAwait(false);
             // check if this is owner's queue, or user is bot admin
             if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
-                await _client.RespondWithTextAsync(message, "(n) To remove from a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "(n) To remove from a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -241,7 +241,7 @@ cancellationToken).ConfigureAwait(false);
                 builder.AppendFormat("\r\n{0} IDs did not exist on the queue so were skipped.", skippedCount.ToString());
 
             // send response
-            await _client.RespondWithTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -255,13 +255,13 @@ cancellationToken).ConfigureAwait(false);
             // check if this is owner's queue, or user is bot admin
             if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
-                await _client.RespondWithTextAsync(message, "(n) To clear a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "(n) To clear a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
             }
 
             int idCount = queue.QueuedIDs.Count;
             queue.QueuedIDs.Clear();
-            await _client.RespondWithTextAsync(message, $"(y) {idCount} ID{(idCount > 1 ? "s" : "")} removed from queue \"{queue.Name}\" .", cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, $"(y) {idCount} ID{(idCount > 1 ? "s" : "")} removed from queue \"{queue.Name}\" .", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -275,7 +275,7 @@ cancellationToken).ConfigureAwait(false);
             // check if this is owner's queue, or user is bot admin
             if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
-                await _client.RespondWithTextAsync(message, "(n) To rename a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "(n) To rename a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
             }
 
@@ -284,14 +284,14 @@ cancellationToken).ConfigureAwait(false);
             // check same name
             if (newName.Equals(queue.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await _client.RespondWithTextAsync(message, $"(n) Queue is already named \"{newName}\".", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) Queue is already named \"{newName}\".", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // check forbidden name
             if (IsQueueNameForbidden(newName))
             {
-                await _client.RespondWithTextAsync(message, $"(n) Queue name \"{newName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) Queue name \"{newName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -299,12 +299,12 @@ cancellationToken).ConfigureAwait(false);
             IdQueue existingQueue = await _idQueueStore.GetIdQueueByNameAsync(newName, cancellationToken).ConfigureAwait(false);
             if (existingQueue != null)
             {
-                await _client.RespondWithTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             queue.Name = newName;
-            await _client.RespondWithTextAsync(message, $"(y) Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, $"(y) Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -318,25 +318,25 @@ cancellationToken).ConfigureAwait(false);
             // check if this is owner's queue, or user is bot admin
             if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
-                await _client.RespondWithTextAsync(message, "(n) To transfer a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "(n) To transfer a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             if (!uint.TryParse(args, out uint id))
             {
-                await _client.RespondWithTextAsync(message, $"(n) `{args}` is not a valid user ID.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) `{args}` is not a valid user ID.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             WolfUser user = await _client.GetUserAsync(id, cancellationToken).ConfigureAwait(false);
             if (user == null)
             {
-                await _client.RespondWithTextAsync(message, $"(n) User {args} not found.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) User {args} not found.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             queue.OwnerID = user.ID;
-            await _client.RespondWithTextAsync(message, $"(y) Queue `{queue.Name}` transferred to {user.Name}.", cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, $"(y) Queue `{queue.Name}` transferred to {user.Name}.", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -348,9 +348,9 @@ cancellationToken).ConfigureAwait(false);
             if (queue == null)
             {
                 if (queueName.Equals("my", StringComparison.OrdinalIgnoreCase))
-                    await _client.RespondWithTextAsync(message, "(n) Your queue not found.", cancellationToken).ConfigureAwait(false);
+                    await _client.ReplyTextAsync(message, "(n) Your queue not found.", cancellationToken).ConfigureAwait(false);
                 else
-                    await _client.RespondWithTextAsync(message, $"(n) Queue {queueName} not found.", cancellationToken).ConfigureAwait(false);
+                    await _client.ReplyTextAsync(message, $"(n) Queue {queueName} not found.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -358,7 +358,7 @@ cancellationToken).ConfigureAwait(false);
             if (queue.OwnerID != null)
                 await _client.GetUserAsync(queue.OwnerID.Value, cancellationToken).ConfigureAwait(false);
 
-            await _client.RespondWithTextAsync(message,
+            await _client.ReplyTextAsync(message,
                 $"Name: {queue.Name}\r\n" +
                 $"Owner ID: {(queue.OwnerID != null ? queue.OwnerID.ToString() : "-")}\r\n" +
                 $"Owner: {(user != null ? user.Nickname : "-")}\r\n" +
@@ -410,7 +410,7 @@ cancellationToken).ConfigureAwait(false);
             catch (Exception ex) when (ex.LogAsError(_log, "Failed saving queue {QueueName} in the database", queue.Name))
             {
                 if (message != null)
-                    await _client.RespondWithTextAsync(message, $"/alert Failed saving queue '{queue.Name}' in the database.", cancellationToken).ConfigureAwait(false);
+                    await _client.ReplyTextAsync(message, $"/alert Failed saving queue '{queue.Name}' in the database.", cancellationToken).ConfigureAwait(false);
                 return false;
             }
         }
@@ -435,7 +435,7 @@ cancellationToken).ConfigureAwait(false);
             // check forbidden name
             if (IsQueueNameForbidden(queueName))
             {
-                await _client.RespondWithTextAsync(message, $"(n) Queue name \"{queueName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) Queue name \"{queueName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
                 return null;
             }
 
@@ -446,12 +446,12 @@ cancellationToken).ConfigureAwait(false);
                 if (existingQueue != null)
                 {
                     if (existingQueue.OwnerID == null)
-                        await _client.RespondWithTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists, but is not claimed by you.\r\n" +
+                        await _client.ReplyTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists, but is not claimed by you.\r\n" +
                             $"Use '{_botOptions.CurrentValue.CommandPrefix}{queueName}queue claim' to set as yours!", cancellationToken).ConfigureAwait(false);
                     else
                     {
                         WolfUser queueOwner = await _client.GetUserAsync(existingQueue.OwnerID.Value, cancellationToken).ConfigureAwait(false);
-                        await _client.RespondWithTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists, but is claimed by {queueOwner.Nickname}. :(", cancellationToken).ConfigureAwait(false);
+                        await _client.ReplyTextAsync(message, $"(n) Queue \"{existingQueue.Name}\" already exists, but is claimed by {queueOwner.Nickname}. :(", cancellationToken).ConfigureAwait(false);
                     }
                     return null;
                 }
@@ -475,7 +475,7 @@ cancellationToken).ConfigureAwait(false);
             }
             catch (Exception)
             {
-                await _client.RespondWithTextAsync(message, "/alert Failed retrieving queue from database.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "/alert Failed retrieving queue from database.", cancellationToken).ConfigureAwait(false);
                 throw;
             }
         }

@@ -90,7 +90,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     {
                         string url = command.Substring("check ".Length).TrimEnd();
                         if (!_urlMatchingRegex.IsMatch(url))
-                            await _client.RespondWithTextAsync(message, $"/alert Invalid URL: {url}", cancellationToken).ConfigureAwait(false);
+                            await _client.ReplyTextAsync(message, $"/alert Invalid URL: {url}", cancellationToken).ConfigureAwait(false);
                         else
                             await HandleImageCheckRequestAsync(message, url, true, cancellationToken).ConfigureAwait(false);
                     }
@@ -116,7 +116,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             // only work in groups
             if (message.IsPrivateMessage)
             {
-                await _client.RespondWithTextAsync(message, "/alert Listen modes are only supported in groups.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "/alert Listen modes are only supported in groups.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -124,7 +124,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
             if (member?.HasAdminPrivileges != true)
             {
-                await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -132,7 +132,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             SettingSwitch settingSwitch = ParseSettingSwitch(regexMatch.Groups.Count > 2 ? regexMatch.Groups[2]?.Value : null);
             if (settingSwitch == SettingSwitch.Invalid)
             {
-                await _client.RespondWithTextAsync(message, "/alert Invalid switch.\r\n" +
+                await _client.ReplyTextAsync(message, "/alert Invalid switch.\r\n" +
                     "Allowed values: on, true, enable, enabled, off, false, disable, disabled, toggle", cancellationToken).ConfigureAwait(false);
                 return;
             }
@@ -147,7 +147,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 // if no mode or switch privided, simply list current settings
                 case null:
                 case "":
-                    await _client.RespondWithTextAsync(message, "Current listen mode settings for this group:\r\n" +
+                    await _client.ReplyTextAsync(message, "Current listen mode settings for this group:\r\n" +
                         $"Admins: {BoolToOnOff(config.ListenAdmins)}\r\n" +
                         $"Mods: {BoolToOnOff(config.ListenMods)}\r\n" +
                         $"Users: {BoolToOnOff(config.ListenUsers)}\r\n" +
@@ -156,7 +156,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     return;
                 // for help, send help message
                 case "help":
-                    await _client.RespondWithTextAsync(message, "listen <mode> [switch]\r\n" +
+                    await _client.ReplyTextAsync(message, "listen <mode> [switch]\r\n" +
                         "Mode (mandatory): admins, mods, users, bots\r\n" +
                         "Switch (optional): on, off, toggle", cancellationToken).ConfigureAwait(false);
                     return;
@@ -164,29 +164,29 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 case "admins":
                 case "admin":
                     config.ListenAdmins = GetSwitchedValue(config.ListenAdmins, settingSwitch);
-                    await _client.RespondWithTextAsync(message, 
+                    await _client.ReplyTextAsync(message, 
                         $"/me Listening to admins set to {BoolToOnOff(config.ListenAdmins)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "mods":
                 case "mod":
                     config.ListenMods = GetSwitchedValue(config.ListenMods, settingSwitch);
-                    await _client.RespondWithTextAsync(message, 
+                    await _client.ReplyTextAsync(message, 
                         $"/me Listening to mods set to {BoolToOnOff(config.ListenMods)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "users":
                 case "user":
                     config.ListenUsers = GetSwitchedValue(config.ListenUsers, settingSwitch);
-                    await _client.RespondWithTextAsync(message, 
+                    await _client.ReplyTextAsync(message, 
                         $"/me Listening to users without role set to {BoolToOnOff(config.ListenUsers)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 case "bots":
                 case "bot":
                     config.ListenBots = GetSwitchedValue(config.ListenBots, settingSwitch);
-                    await _client.RespondWithTextAsync(message, 
+                    await _client.ReplyTextAsync(message, 
                         $"/me Listening to bots set to {BoolToOnOff(config.ListenBots)} (y)", cancellationToken).ConfigureAwait(false);
                     break;
                 default:
-                    await _client.RespondWithTextAsync(message, $"/alert Unknown listening mode: {mode}", cancellationToken).ConfigureAwait(false);
+                    await _client.ReplyTextAsync(message, $"/alert Unknown listening mode: {mode}", cancellationToken).ConfigureAwait(false);
                     return;
             }
 
@@ -199,7 +199,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             // work only in groups
             if (message.IsPrivateMessage)
             {
-                await _client.RespondWithTextAsync(message, "/alert Enabling and disabling is only supported in groups.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "/alert Enabling and disabling is only supported in groups.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -207,7 +207,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
             if (member?.HasAdminPrivileges != true)
             {
-                await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -225,7 +225,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     break;
             }
             await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
-            await _client.RespondWithTextAsync(message, 
+            await _client.ReplyTextAsync(message, 
                 $"/me Automatic size checking in this group has been {(config.IsEnabled ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
         }
 
@@ -237,7 +237,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
                 if (member?.HasAdminPrivileges != true)
                 {
-                    await _client.RespondWithTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
+                    await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
@@ -246,7 +246,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             SettingSwitch settingSwitch = ParseSettingSwitch(regexMatch.Groups.Count > 1 ? regexMatch.Groups[1]?.Value : null);
             if (settingSwitch == SettingSwitch.Invalid)
             {
-                await _client.RespondWithTextAsync(message, "/alert Invalid switch.\r\n" +
+                await _client.ReplyTextAsync(message, "/alert Invalid switch.\r\n" +
                     "Allowed values: on, true, enable, enabled, off, false, disable, disabled, toggle", cancellationToken).ConfigureAwait(false);
                 return;
             }
@@ -255,7 +255,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             ITargetConfig config = await GetConfigAsync<ITargetConfig>(message, cancellationToken).ConfigureAwait(false);
             config.PostImageURL = GetSwitchedValue(config.PostImageURL, settingSwitch);
             await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
-            await _client.RespondWithTextAsync(message, $"/me Posting image URLs {(config.PostImageURL ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, $"/me Posting image URLs {(config.PostImageURL ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
         }
         #endregion
 
@@ -281,7 +281,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             }
             catch (Exception ex) when (ex.LogAsError(this._log, "Failed downloading image {ImageURL}", cancellationToken))
             {
-                await _client.RespondWithTextAsync(message, $"/alert Failed downloading image: {ex.Message}\r\nImage URL: {imageUrl}", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"/alert Failed downloading image: {ex.Message}\r\nImage URL: {imageUrl}", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -296,7 +296,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 response += $"\r\nImage URL: {imageUrl}";
 
             // send the response
-            await _client.RespondWithTextAsync(message, response, cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, response, cancellationToken).ConfigureAwait(false);
         }
 
         private async ValueTask<bool> CheckShouldCheckSizeAsync(ChatMessage message, ITargetConfig config, CancellationToken cancellationToken = default)

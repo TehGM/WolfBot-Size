@@ -63,7 +63,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                 UserData userData = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
                 if (!userData.IsBotAdmin)
                 {
-                    await _client.RespondWithTextAsync(message, "/alert You are not permitted to do this!", cancellationToken).ConfigureAwait(false);
+                    await _client.ReplyTextAsync(message, "/alert You are not permitted to do this!", cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -78,7 +78,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                 _idQueueCache.Clear();
 
                 // reply to user
-                await _client.RespondWithTextAsync(message, "(y) Database caches cleared:\r\n" +
+                await _client.ReplyTextAsync(message, "(y) Database caches cleared:\r\n" +
                     $"{nameof(IUserDataCache)}: {userDataCacheCount}\r\n" +
                     $"{nameof(IGroupConfigCache)}: {groupConfigCacheCount}\r\n" +
                     $"{nameof(IIdQueueCache)}: {idQueueCacheCount}",
