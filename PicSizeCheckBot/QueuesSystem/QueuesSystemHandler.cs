@@ -63,9 +63,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
 
                 Match match = _queueCommandRegex.Match(command);
 
-                string queueName = match.Groups[1].Value;
-                string commandSwitch = match.Groups[2]?.Value?.ToLowerInvariant();
-                string args = match.Groups[3].Value;
+                string queueName = match.Groups[1].Value.Trim();
+                string commandSwitch = match.Groups[2]?.Value?.ToLowerInvariant().Trim();
+                string args = match.Groups[3].Value.Trim();
 
                 switch (commandSwitch)
                 {
@@ -101,7 +101,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             }
 
             // get queue and ensure not empty
-            IdQueue queue = await GetQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
             if (!queue.QueuedIDs.Any())
@@ -130,7 +130,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         /* CLEAR */
         private async Task CmdClearAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
-            IdQueue queue = await GetQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
 
             // check if this is owner's queue
             if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
@@ -151,7 +151,47 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         /* RENAME */
         private async Task CmdRenameAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
+            IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
 
+            // check if this is owner's queue
+            if (queue.OwnerID == null || queue.OwnerID.Value != message.SenderID.Value)
+            {
+                // if not, check if bot admin
+                UserData user = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
+                if (user.IsBotAdmin)
+                {
+                    await _client.RespondWithTextAsync(message, "/alert To rename a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+            }
+
+            string newName = args.Trim();
+
+            // check same name
+            if (newName.Equals(queue.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                await _client.RespondWithTextAsync(message, $"Queue is already named \"{newName}\".", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            // check forbidden name
+            if (IsQueueNameForbidden(newName))
+            {
+                await _client.RespondWithTextAsync(message, $"/alert Queue name \"{newName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            // check new queue name doesn't yet exist
+            IdQueue existingQueue = await _idQueueStore.GetIdQueueByNameAsync(args.Trim(), cancellationToken).ConfigureAwait(false);
+            if (existingQueue != null)
+            {
+                await _client.RespondWithTextAsync(message, $"/alert Queue \"{existingQueue.Name}\" already exists.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            queue.Name = newName;
+            await _client.RespondWithTextAsync(message, $"/me Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
+            await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* ASSIGN */
@@ -179,7 +219,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             }
         }
 
-        private async Task<IdQueue> GetQueueAsync(ChatMessage message, string name, CancellationToken cancellationToken = default)
+        private async Task<IdQueue> GetOrCreateQueueAsync(ChatMessage message, string name, CancellationToken cancellationToken = default)
         {
             // first try to get existing queue
             if (name.Equals("my", StringComparison.OrdinalIgnoreCase))
@@ -206,7 +246,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             }
 
             // check forbidden name
-            if (_queuesOptions.CurrentValue.ForbiddenQueueNames.Contains(queueName))
+            if (IsQueueNameForbidden(queueName))
             {
                 await _client.RespondWithTextAsync(message, $"/alert Queue name \"{queueName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
                 return null;
@@ -236,6 +276,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 result.OwnerID = message.SenderID.Value;
             return result;
         }
+
+        private bool IsQueueNameForbidden(string queueName)
+            => _queuesOptions.CurrentValue.ForbiddenQueueNames.Contains(queueName);
 
         private Task SendShowCommandAsync(uint groupID, uint gameID, CancellationToken cancellationToken = default)
         {

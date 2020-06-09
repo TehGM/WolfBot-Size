@@ -21,7 +21,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
         public IdQueue(string name) : this(Guid.NewGuid())
         {
-            this.Name = name;
+            this.Name = name.Trim();
             this.QueuedIDs = new Queue<uint>();
         }
 
