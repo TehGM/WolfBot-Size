@@ -144,6 +144,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 }
             }
 
+            queue.QueuedIDs.Clear();
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
