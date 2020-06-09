@@ -4,7 +4,7 @@ using TehGM.WolfBots.PicSizeCheckBot.Options;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
 {
-    public class IdQueueCache : EntityCache<string, IdQueue>, IIdQueueCache
+    public class IdQueueCache : EntityCache<Guid, IdQueue>, IIdQueueCache
     {
         public const string OptionName = "IdQueue";
 
@@ -13,8 +13,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
         private bool _enabled => _cachingOptions.Get(OptionName).Enable;
         private TimeSpan _expirationTime => _cachingOptions.Get(OptionName).Lifetime;
 
-        public IdQueueCache(IOptionsMonitor<CachingOptions> cachingOptions)
-            : base(StringComparer.OrdinalIgnoreCase)
+        public IdQueueCache(IOptionsMonitor<CachingOptions> cachingOptions) : base()
         {
             this._cachingOptions = cachingOptions;
         }

@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.Options;
-using System;
-using TehGM.WolfBots.PicSizeCheckBot.Options;
+﻿using System;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Caching
 {
-    public interface IIdQueueCache : IEntityCache<string, IdQueue> { }
+    public interface IIdQueueCache : IEntityCache<Guid, IdQueue> { }
 }

@@ -13,7 +13,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
         private bool _enabled => _cachingOptions.Get(OptionName).Enable;
         private TimeSpan _expirationTime => _cachingOptions.Get(OptionName).Lifetime;
 
-        public UserDataCache(IOptionsMonitor<CachingOptions> cachingOptions)
+        public UserDataCache(IOptionsMonitor<CachingOptions> cachingOptions) : base()
         {
             this._cachingOptions = cachingOptions;
         }

@@ -39,10 +39,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             _batchInserter.UpdateCollection(_idQueuesCollection);
         }
 
-        public async Task<IdQueue> GetIdQueueAsync(string name, CancellationToken cancellationToken = default)
+        public async Task<IdQueue> GetIdQueueByNameAsync(string name, CancellationToken cancellationToken = default)
         {
             // check cache first
-            IdQueue result = _cache.Get(name);
+            IdQueue result = _cache.Find(cachedQueue => cachedQueue.Entity.Name.Equals(name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (result != null)
             {
                 _log.LogTrace("IDs queue {QueueName} found in cache", name);
