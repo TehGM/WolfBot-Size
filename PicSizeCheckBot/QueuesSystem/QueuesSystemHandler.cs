@@ -150,7 +150,7 @@ cancellationToken).ConfigureAwait(false);
             }
 
             uint gameID = queue.QueuedIDs.Dequeue();
-            await SendShowCommandAsync(message.RecipientID, gameID, cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions.CurrentValue, gameID), cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
@@ -482,13 +482,6 @@ cancellationToken).ConfigureAwait(false);
 
         private bool IsQueueNameForbidden(string queueName)
             => _queuesOptions.CurrentValue.ForbiddenQueueNames.Contains(queueName);
-
-        private Task SendShowCommandAsync(uint groupID, uint gameID, CancellationToken cancellationToken = default)
-        {
-            StringBuilder builder = new StringBuilder(_queuesOptions.CurrentValue.SubmissionBotShowCommand);
-            builder.Replace("{{id}}", gameID.ToString());
-            return _client.SendGroupTextMessageAsync(groupID, builder.ToString(), cancellationToken);
-        }
         #endregion
 
 

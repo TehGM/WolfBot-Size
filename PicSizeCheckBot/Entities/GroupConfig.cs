@@ -26,6 +26,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         /// <summary>Whether automatic size checks are enabled in this group at all.</summary>
         public bool IsEnabled { get; set; } = true;
 
+        // data
+        /// <summary>ID of next guesswhat game in this group.</summary>
+        public uint? NextGuesswhatGameID { get; set; }
+
         [BsonConstructor(nameof(ID))]
         public GroupConfig(uint groupID)
         {
