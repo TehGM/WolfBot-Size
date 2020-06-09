@@ -20,13 +20,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
         private readonly IOptionsMonitor<BotOptions> _botOptions;
         private readonly IUserDataCache _userDataCache;
         private readonly IGroupConfigCache _groupConfigCache;
+        private readonly IIdQueueCache _idQueueCache;
         private readonly IUserDataStore _userDataStore;
         private readonly ILogger _log;
 
         private CancellationTokenSource _cts;
 
         public CacheAdminHandler(IHostedWolfClient client, IUserDataStore userDataStore,
-            IUserDataCache userDataCache, IGroupConfigCache groupConfigCache,
+            IUserDataCache userDataCache, IGroupConfigCache groupConfigCache, IIdQueueCache idQueueCache,
             IOptionsMonitor<BotOptions> botOptions, ILogger<CacheAdminHandler> logger)
         {
             // store all services
@@ -36,6 +37,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
             this._userDataStore = userDataStore;
             this._groupConfigCache = groupConfigCache;
             this._userDataCache = userDataCache;
+            this._idQueueCache = idQueueCache;
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
@@ -67,16 +69,19 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
                 // get current counts for reporting
                 int userDataCacheCount = _userDataCache.CachedCount;
-                int groupDataCacheCount = _userDataCache.CachedCount;
+                int groupConfigCacheCount = _groupConfigCache.CachedCount;
+                int idQueueCacheCount = _idQueueCache.CachedCount;
 
                 // clear caches
                 _userDataCache.Clear();
                 _groupConfigCache.Clear();
+                _idQueueCache.Clear();
 
                 // reply to user
                 await _client.RespondWithTextAsync(message, "(y) Database caches cleared:\r\n" +
                     $"{nameof(IUserDataCache)}: {userDataCacheCount}\r\n" +
-                    $"{nameof(IGroupConfigCache)}: {groupDataCacheCount}",
+                    $"{nameof(IGroupConfigCache)}: {groupConfigCacheCount}\r\n" +
+                    $"{nameof(IIdQueueCache)}: {idQueueCacheCount}",
                     cancellationToken).ConfigureAwait(false);
 
                 // log the change
@@ -84,7 +89,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                 using IDisposable clearedLogScope = _log.BeginScope(new Dictionary<string, object>()
                 {
                     { "UserDataCacheCount", userDataCacheCount },
-                    { "GroupConfigCacheCount", groupDataCacheCount }
+                    { "GroupConfigCacheCount", groupConfigCacheCount },
+                    { "IdQueueCacheCount", idQueueCacheCount }
                 });
                 _log.LogInformation("All database caches cleared by {UserID} ({UserNickname})", user.ID, user.Nickname);
             }
