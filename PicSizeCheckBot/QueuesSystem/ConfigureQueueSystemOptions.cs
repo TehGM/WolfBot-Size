@@ -1,24 +1,18 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
 {
-    public class ConfigureQueueSystemOptions : IConfigureOptions<QueuesSystemOptions>
+    public class ConfigureQueueSystemOptions : IPostConfigureOptions<QueuesSystemOptions>
     {
-        private readonly IConfiguration _configuration;
-
-        public ConfigureQueueSystemOptions(IConfiguration configuration)
+        public void PostConfigure(string name, QueuesSystemOptions options)
         {
-            this._configuration = configuration;
-        }
+            if (options.ForbiddenQueueNames?.Any() == true)
+                return;
 
-        public void Configure(QueuesSystemOptions options)
-        {
-            IEnumerable<string> forbiddenNames = _configuration.GetSection(nameof(QueuesSystemOptions.ForbiddenQueueNames))?.Get<IEnumerable<string>>();
-            if (forbiddenNames == null)
-                forbiddenNames = new string[] { "cache", "posturl", "enable", "disable", "next", "help", "profile", "listen", "post url", "continue", "update", "max size", "join", "leave", "mention", "admin" };
+            string[] forbiddenNames = new string[] { "cache", "posturl", "enable", "disable", "next", "help", "profile", "listen", "post url", "continue", "update", "max size", "join", "leave", "mention", "admin" };
             options.ForbiddenQueueNames = new HashSet<string>(forbiddenNames, StringComparer.OrdinalIgnoreCase);
         }
     }

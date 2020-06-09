@@ -52,18 +52,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.AddSingleton<IMongoConnection, MongoConnection>();
                     services.AddSingleton<IUserDataStore, MongoUserDataStore>();
                     services.AddSingleton<IGroupConfigStore, MongoGroupConfigStore>();
-                    services.AddSingleton<IIdQueueStore, MongoIdQueuesStore>();
 
                     // add caches
                     services.AddSingleton<IUserDataCache, UserDataCache>();
                     services.AddSingleton<IGroupConfigCache, GroupConfigCache>();
-                    services.AddSingleton<IIdQueueCache, IdQueueCache>();
                     services.AddHostedService<CacheCleaner>();
 
                     // add handlers
                     services.AddHostedService<PictureSizeHandler>();
                     services.AddHostedService<CacheAdminHandler>();
-                    services.AddHostedService<QueuesSystemHandler>();
+                    services.AddQueuesSystem();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();
