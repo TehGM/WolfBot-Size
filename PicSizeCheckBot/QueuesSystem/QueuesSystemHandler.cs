@@ -67,25 +67,31 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 string commandSwitch = match.Groups[2]?.Value?.ToLowerInvariant().Trim();
                 string args = match.Groups[3].Value.Trim();
 
+                Func<ChatMessage, string, string, CancellationToken, Task> cmdMethod = null;
+
                 switch (commandSwitch)
                 {
                     case null:
                     case "":
                     case "next":
-                        await CmdNextAsync(message, queueName, args, cancellationToken).ConfigureAwait(false);
+                        cmdMethod = CmdNextAsync;
                         break;
                     case "clear":
-                        await CmdClearAsync(message, queueName, args, cancellationToken).ConfigureAwait(false);
+                        cmdMethod = CmdClearAsync;
                         break;
                     case "rename":
-                        await CmdClearAsync(message, queueName, args, cancellationToken).ConfigureAwait(false);
+                        cmdMethod = CmdRenameAsync;
+                        break;
+                    case "info":
+                        cmdMethod = CmdInfoAsync;
                         break;
                 }
+
+                await cmdMethod(message, queueName, args, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
         }
-
 
         #region Commands
         /* HELP */
