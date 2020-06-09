@@ -92,6 +92,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                     case "remove":
                         cmdMethod = CmdRemoveAsync;
                         break;
+                    case "transfer":
+                        cmdMethod = CmdTransferAsync;
+                        break;
                     default:
                         cmdMethod = CmdAddAsync;
                         break;
@@ -174,10 +177,6 @@ cancellationToken).ConfigureAwait(false);
                 }
             }
 
-            // save queue
-            if (!await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false))
-                return;
-
             // build response
             StringBuilder builder = new StringBuilder();
             if (addedCount > 0)
@@ -191,6 +190,7 @@ cancellationToken).ConfigureAwait(false);
 
             // send response
             await _client.RespondWithTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
+            await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* SHOW */
@@ -229,9 +229,6 @@ cancellationToken).ConfigureAwait(false);
             int previousCount = queue.QueuedIDs.Count;
             queue.QueuedIDs = new Queue<uint>(queue.QueuedIDs.Where(i => !ids.Contains(i)));
 
-            // save queue
-            if (!await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false))
-                return;
 
             // build response
             int removedCount = previousCount - queue.QueuedIDs.Count;
@@ -246,6 +243,7 @@ cancellationToken).ConfigureAwait(false);
 
             // send response
             await _client.RespondWithTextAsync(message, builder.ToString(), cancellationToken).ConfigureAwait(false);
+            await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* CLEAR */
@@ -324,6 +322,23 @@ cancellationToken).ConfigureAwait(false);
                 await _client.RespondWithTextAsync(message, "(n) To transfer a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                 return;
             }
+
+            if (!uint.TryParse(args, out uint id))
+            {
+                await _client.RespondWithTextAsync(message, $"(n) `{args}` is not a valid user ID.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            WolfUser user = await _client.GetUserAsync(id, cancellationToken).ConfigureAwait(false);
+            if (user == null)
+            {
+                await _client.RespondWithTextAsync(message, $"(n) User {args} not found.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            queue.OwnerID = user.ID;
+            await _client.RespondWithTextAsync(message, $"(y) Queue `{queue.Name}` transferred to {user.Name}.", cancellationToken).ConfigureAwait(false);
+            await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* INFO */
