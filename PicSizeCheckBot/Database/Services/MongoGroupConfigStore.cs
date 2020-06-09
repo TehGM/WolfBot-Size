@@ -36,6 +36,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         {
             DatabaseOptions options = base.DatabaseOptions.CurrentValue;
             _groupConfigsCollection = newClient.GetDatabase(options.DatabaseName).GetCollection<GroupConfig>(options.GroupConfigsCollectionName);
+            _batchInserter.UpdateCollection(_groupConfigsCollection);
         }
 
         public async Task<GroupConfig> GetGroupConfigAsync(uint groupID, CancellationToken cancellationToken = default)
