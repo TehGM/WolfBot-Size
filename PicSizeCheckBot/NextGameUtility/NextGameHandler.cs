@@ -158,7 +158,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             {
                 GroupConfig groupConfig = await _groupConfigStore.GetGroupConfigAsync(groupID, cancellationToken).ConfigureAwait(false);
                 groupConfig.NextGuesswhatGameID = nextID;
-                await _groupConfigStore.SetGroupConfigAsync(groupConfig, cancellationToken).ConfigureAwait(false);
+                await _groupConfigStore.SetGroupConfigAsync(groupConfig, false, cancellationToken).ConfigureAwait(false);
                 return true;
             }
             catch (Exception ex) when (ex.LogAsError(_log, "Failed saving group config for group {GroupID} in the database", groupID))
