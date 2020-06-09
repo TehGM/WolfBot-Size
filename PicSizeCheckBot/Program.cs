@@ -6,7 +6,6 @@ using Serilog.Events;
 using System;
 using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
-using TehGM.WolfBots.PicSizeCheckBot.Admin;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Caching.Services;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
@@ -35,7 +34,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     // configure options
                     services.Configure<BotOptions>(context.Configuration);
                     services.Configure<HostedWolfClientOptions>(context.Configuration.GetSection("WolfClient"));
-                    services.Configure<PictureSizeOptions>(context.Configuration.GetSection("PictureSize"));
+                    services.Configure<SizeCheckingOptions>(context.Configuration.GetSection("PictureSize"));
                     services.Configure<QueuesSystemOptions>(context.Configuration.GetSection("QueuesSystem"));
                     services.Configure<DatabaseOptions>(context.Configuration.GetSection("Database"));
                     services.Configure<CachingOptions>(UserDataCache.OptionName, context.Configuration.GetSection("Caching:" + UserDataCache.OptionName));
@@ -48,19 +47,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     // add hosted wolf client
                     services.AddWolfClient();
 
-                    // add data stores
-                    services.AddSingleton<IMongoConnection, MongoConnection>();
-                    services.AddSingleton<IUserDataStore, MongoUserDataStore>();
-                    services.AddSingleton<IGroupConfigStore, MongoGroupConfigStore>();
-
-                    // add caches
-                    services.AddSingleton<IUserDataCache, UserDataCache>();
-                    services.AddSingleton<IGroupConfigCache, GroupConfigCache>();
-                    services.AddHostedService<CacheCleaner>();
+                    // add caching
+                    services.AddEntityCaching();
 
                     // add handlers
-                    services.AddHostedService<PictureSizeHandler>();
-                    services.AddHostedService<CacheAdminHandler>();
+                    services.AddSizeChecking();
+                    services.AddAdminUtilities();
                     services.AddQueuesSystem();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)

@@ -1,6 +1,6 @@
 ﻿namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 {
-    public class PictureSizeOptions
+    public class SizeCheckingOptions
     {
         public int MinimumValidSize { get; set; } = 640;
         public int MaximumValidSize { get; set; } = 1600;

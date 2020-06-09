@@ -17,11 +17,11 @@ using TehGM.Wolfringo.Messages;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 {
-    public class PictureSizeHandler : IHostedService, IDisposable
+    public class SizeCheckingHandler : IHostedService, IDisposable
     {
         private readonly IHostedWolfClient _client;
         private readonly IHostEnvironment _environment;
-        private readonly IOptionsMonitor<PictureSizeOptions> _picSizeOptions;
+        private readonly IOptionsMonitor<SizeCheckingOptions> _picSizeOptions;
         private readonly IOptionsMonitor<BotOptions> _botOptions;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUserDataStore _userDataStore;
@@ -35,10 +35,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 
         private CancellationTokenSource _cts;
 
-        public PictureSizeHandler(IHostedWolfClient client, 
-            ILogger<PictureSizeHandler> logger, IHostEnvironment environment, IHttpClientFactory httpClientFactory,
+        public SizeCheckingHandler(IHostedWolfClient client, 
+            ILogger<SizeCheckingHandler> logger, IHostEnvironment environment, IHttpClientFactory httpClientFactory,
             IUserDataStore userDataStore, IGroupConfigStore groupConfigStore,
-            IOptionsMonitor<PictureSizeOptions> picSizeOptions, IOptionsMonitor<BotOptions> botOptions)
+            IOptionsMonitor<SizeCheckingOptions> picSizeOptions, IOptionsMonitor<BotOptions> botOptions)
         {
             // store all services
             this._client = client;
@@ -58,7 +58,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             picSizeOptions.OnChange(this.OnPicSizeOptionsReload);
         }
 
-        private void OnPicSizeOptionsReload(PictureSizeOptions options)
+        private void OnPicSizeOptionsReload(SizeCheckingOptions options)
         {
             this._urlMatchingRegex = new Regex(options.UrlMatchingPattern);
         }

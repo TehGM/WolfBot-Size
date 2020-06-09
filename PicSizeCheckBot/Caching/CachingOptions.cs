@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TehGM.WolfBots.PicSizeCheckBot.Options
+namespace TehGM.WolfBots.PicSizeCheckBot.Caching
 {
     public class CachingOptions
     {

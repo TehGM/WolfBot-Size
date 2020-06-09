@@ -12,7 +12,7 @@ using TehGM.Wolfringo;
 using TehGM.Wolfringo.Hosting;
 using TehGM.Wolfringo.Messages;
 
-namespace TehGM.WolfBots.PicSizeCheckBot.Admin
+namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 {
     public class CacheAdminHandler : IHostedService, IDisposable
     {
