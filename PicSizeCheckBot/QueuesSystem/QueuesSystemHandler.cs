@@ -358,12 +358,12 @@ cancellationToken).ConfigureAwait(false);
 
             WolfUser user = null;
             if (queue.OwnerID != null)
-                await _client.GetUserAsync(queue.OwnerID.Value, cancellationToken).ConfigureAwait(false);
+                user = await _client.GetUserAsync(queue.OwnerID.Value, cancellationToken).ConfigureAwait(false);
 
             await _client.ReplyTextAsync(message,
                 $"Name: {queue.Name}\r\n" +
-                $"Owner ID: {(queue.OwnerID != null ? queue.OwnerID.ToString() : "-")}\r\n" +
-                $"Owner: {(user != null ? user.Nickname : "-")}\r\n" +
+                $"Owner ID: {(queue.OwnerID?.ToString() ?? "-")}\r\n" +
+                $"Owner: {(user?.Nickname ?? "-")}\r\n" +
                 $"ID Count: {queue.QueuedIDs?.Count ?? 0}\r\n" +
                 $"\r\nID: {queue.ID}",
                 cancellationToken).ConfigureAwait(false);
