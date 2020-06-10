@@ -19,29 +19,44 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
         public EntityCache() : this(EqualityComparer<TKey>.Default) { }
 
         public virtual void AddOrReplace(TEntity entity)
-            => _cachedEntities[entity.ID] = new CachedEntity<TEntity>(entity);
+        {
+            lock (_cachedEntities)
+                _cachedEntities[entity.ID] = new CachedEntity<TEntity>(entity);
+        }
 
         public void Clear()
-            => _cachedEntities.Clear();
+        {
+            lock (_cachedEntities)
+                _cachedEntities.Clear();
+        }
 
         public IEnumerable<TEntity> Find(Func<CachedEntity<TEntity>, bool> predicate)
-            => _cachedEntities.Where(pair => predicate(pair.Value)).Select(e => e.Value.Entity).ToImmutableArray();
+        {
+            lock (_cachedEntities)
+                return _cachedEntities.Where(pair => predicate(pair.Value)).Select(e => e.Value.Entity).ToImmutableArray();
+        }
 
         public virtual TEntity Get(TKey key)
         {
-            if (_cachedEntities.TryGetValue(key, out CachedEntity<TEntity> result))
+            lock (_cachedEntities)
             {
-                if (!IsEntityExpired(result))
-                    return result.Entity;
-                else _cachedEntities.Remove(key);
+                if (_cachedEntities.TryGetValue(key, out CachedEntity<TEntity> result))
+                {
+                    if (!IsEntityExpired(result))
+                        return result.Entity;
+                    else _cachedEntities.Remove(key);
+                }
+                return default;
             }
-            return default;
         }
 
         protected virtual bool IsEntityExpired(CachedEntity<TEntity> entity)
             => false;
 
         public void Remove(TKey key)
-            => _cachedEntities.Remove(key);
+        {
+            lock (_cachedEntities)
+                _cachedEntities.Remove(key);
+        }
     }
 }
