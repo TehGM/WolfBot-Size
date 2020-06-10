@@ -12,6 +12,7 @@ using TehGM.WolfBots.PicSizeCheckBot.NextGameUtility;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.WolfBots.PicSizeCheckBot.QueuesSystem;
 using TehGM.WolfBots.PicSizeCheckBot.SizeChecking;
+using TehGM.WolfBots.PicSizeCheckBot.UserNotes;
 using TehGM.Wolfringo.Hosting;
 
 namespace TehGM.WolfBots.PicSizeCheckBot
@@ -36,6 +37,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.Configure<SizeCheckingOptions>(context.Configuration.GetSection("PictureSize"));
                     services.Configure<QueuesSystemOptions>(context.Configuration.GetSection("QueuesSystem"));
                     services.Configure<NextGameOptions>(context.Configuration.GetSection("NextGame"));
+                    services.Configure<UserNotesOptions>(context.Configuration.GetSection("UserNotes"));
                     services.Configure<DatabaseOptions>(context.Configuration.GetSection("Database"));
                     services.Configure<CachingOptions>(UserDataCache.OptionName, context.Configuration.GetSection("Caching:" + UserDataCache.OptionName));
                     services.Configure<CachingOptions>(GroupConfigCache.OptionName, context.Configuration.GetSection("Caching:" + GroupConfigCache.OptionName));
@@ -55,6 +57,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.AddAdminUtilities();
                     services.AddQueuesSystem();
                     services.AddNextGameUtility();
+                    services.AddUserNotes();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();

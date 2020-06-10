@@ -1,4 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
+using System.Collections.Generic;
 
 namespace TehGM.WolfBots.PicSizeCheckBot
 {
@@ -18,10 +19,15 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         /// <summary>Whether bot should post image URL for size checks when used in PM.</summary>
         public bool PostImageURL { get; set; } = true;
 
+        // data
+        /// <summary>Collection of user notes.</summary>
+        public IDictionary<uint, string> Notes { get; set; }
+
         [BsonConstructor(nameof(ID))]
         public UserData(uint userID)
         {
             this.ID = userID;
+            this.Notes ??= new Dictionary<uint, string>();
         }
     }
 }

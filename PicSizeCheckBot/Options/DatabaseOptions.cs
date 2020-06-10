@@ -13,6 +13,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Options
         public string UsersDataCollectionName { get; set; } = "UsersData";
         public string GroupConfigsCollectionName { get; set; } = "GroupConfigs";
         public string IdQueuesCollectionName { get; set; } = "IdQueues";
+        public string UserNotesCollectionName { get; set; } = "UserNotes";
 
         // inserter batch delays
         public TimeSpan IdQueueBatchDelay { get; set; } = TimeSpan.FromMinutes(10);
