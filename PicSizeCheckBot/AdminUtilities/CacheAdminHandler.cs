@@ -65,7 +65,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                 UserData userData = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
                 if (!userData.IsBotAdmin)
                 {
-                    await _client.ReplyTextAsync(message, "/alert You are not permitted to do this!", cancellationToken).ConfigureAwait(false);
+                    await _client.ReplyTextAsync(message, "(n) You are not permitted to do this!", cancellationToken).ConfigureAwait(false);
                     return;
                 }
 

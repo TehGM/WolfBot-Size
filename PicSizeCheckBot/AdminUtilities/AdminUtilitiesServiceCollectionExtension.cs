@@ -21,6 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IUserDataCache, UserDataCache>();
             services.TryAddSingleton<IGroupConfigCache, GroupConfigCache>();
             services.AddHostedService<CacheAdminHandler>();
+            services.AddHostedService<BotAdminHandler>();
 
             return services;
         }
