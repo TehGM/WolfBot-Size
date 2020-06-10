@@ -46,6 +46,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
                 if (!message.IsText || !message.IsGroupMessage)
                     return;
 
+                // quit early if group or user is ignored
+                if (_mentionsOptions.CurrentValue.IgnoredGroups?.Contains(message.RecipientID) == true)
+                    return;
+                if (_mentionsOptions.CurrentValue.IgnoredUsers?.Contains(message.SenderID.Value) == true)
+                    return;
+
                 CancellationToken cancellationToken = _cts?.Token ?? default;
                 IEnumerable<MentionConfig> allMentions = await _mentionConfigStore.GetAllAsync(cancellationToken).ConfigureAwait(false);
                 if (allMentions?.Any() == true)

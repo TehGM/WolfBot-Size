@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Caching.Services;
+using TehGM.WolfBots.PicSizeCheckBot.Mentions;
 using TehGM.WolfBots.PicSizeCheckBot.NextGameUtility;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.WolfBots.PicSizeCheckBot.QueuesSystem;
@@ -38,6 +39,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.Configure<QueuesSystemOptions>(context.Configuration.GetSection("QueuesSystem"));
                     services.Configure<NextGameOptions>(context.Configuration.GetSection("NextGame"));
                     services.Configure<UserNotesOptions>(context.Configuration.GetSection("UserNotes"));
+                    services.Configure<MentionsOptions>(context.Configuration.GetSection("Mentions"));
                     services.Configure<DatabaseOptions>(context.Configuration.GetSection("Database"));
                     services.Configure<CachingOptions>(UserDataCache.OptionName, context.Configuration.GetSection("Caching:" + UserDataCache.OptionName));
                     services.Configure<CachingOptions>(GroupConfigCache.OptionName, context.Configuration.GetSection("Caching:" + GroupConfigCache.OptionName));
@@ -90,7 +92,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
             // add default logger for errors that happen before host runs
             Log.Logger = new LoggerConfiguration()
                         .WriteTo.Console()
-                        .WriteTo.File("data/logs/tepn-unhandled.log",
+                        .WriteTo.File("logs/log-unhandled.txt",
                         fileSizeLimitBytes: 1048576,        // 1MB
                         rollOnFileSizeLimit: true,
                         retainedFileCountLimit: 5,
