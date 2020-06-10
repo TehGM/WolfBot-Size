@@ -77,11 +77,20 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
             StringBuilder builder = new StringBuilder(config.MessageTemplate ?? _mentionsOptions.CurrentValue.DefaultMessageTemplate);
             WolfUser user = await _client.GetUserAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
             WolfGroup group = await _client.GetGroupAsync(message.RecipientID, cancellationToken).ConfigureAwait(false);
+
+            // metadata
             builder.Replace("{{UserID}}", user.ID.ToString());
             builder.Replace("{{UserName}}", user.Nickname);
             builder.Replace("{{GroupID}}", group.ID.ToString());
             builder.Replace("{{GroupName}}", group.Name);
-            builder.Replace("{{Message}}", message.Text);
+
+            // trim text if too long
+            string txt = message.Text;
+            if (txt.Length > _mentionsOptions.CurrentValue.MaxTextLength)
+                txt = txt.Remove(_mentionsOptions.CurrentValue.MaxTextLength) + "...";
+            builder.Replace("{{Message}}", txt);
+
+            // return results
             return builder.ToString();
         }
 

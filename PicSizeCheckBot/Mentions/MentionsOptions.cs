@@ -8,5 +8,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
 
         public HashSet<uint> IgnoredUsers { get; set; }
         public HashSet<uint> IgnoredGroups { get; set; }
+
+        public int MaxTextLength { get; set; } = 500;
     }
 }
