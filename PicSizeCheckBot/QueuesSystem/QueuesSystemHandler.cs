@@ -201,7 +201,7 @@ cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
-            if (queue.QueuedIDs?.Any() == true)
+            if (queue.QueuedIDs?.Any() != true)
             {
                 await _client.ReplyTextAsync(message, $"{queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
                 return;
