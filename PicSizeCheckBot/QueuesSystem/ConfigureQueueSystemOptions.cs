@@ -12,7 +12,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             if (options.ForbiddenQueueNames?.Any() == true)
                 return;
 
-            string[] forbiddenNames = new string[] { "cache", "posturl", "enable", "disable", "next", "help", "profile", "listen", "post url", "continue", "update", "max size", "join", "leave", "mention", "admin" };
+            string[] forbiddenNames = new string[] { "cache", "posturl", "enable", "disable", "next", "help", "profile", "listen", "post url", "continue", "update", "max size", "join", "leave", "mention", "admin", "notes" };
             options.ForbiddenQueueNames = new HashSet<string>(forbiddenNames, StringComparer.OrdinalIgnoreCase);
         }
     }

@@ -28,7 +28,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         [BsonElement("Pattern")]
         private string _pattern;
 
-        public bool IgnoreCase { get; set; }
+        public bool IgnoreCase { get; set; } = true;
 
         // lazy created Regex
         [BsonIgnore]
