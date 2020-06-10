@@ -35,8 +35,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
 
+            Func<CachedEntity<TEntity>, bool> pred = predicate;
             if (excludeExpired)
-                predicate = e => predicate(e) && !IsEntityExpired(e);
+                pred = e => predicate(e) && !IsEntityExpired(e);
 
             lock (_cachedEntities)
                 return _cachedEntities.Where(pair => predicate(pair.Value)).Select(e => e.Value.Entity).ToImmutableArray();
