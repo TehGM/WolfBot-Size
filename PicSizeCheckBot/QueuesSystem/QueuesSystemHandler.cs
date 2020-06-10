@@ -114,14 +114,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
             await _client.ReplyTextAsync(message, string.Format(@"Queue commands:
 `{0}<queue name> queue next` - pulls the next ID from <queue name>
-`{0}<queue name> queue add <IDs>` - adds IDs to the queue
-`{0}<queue name> queue show` - shows all IDs on the queue
-`{0}<queue name> queue remove <IDs>` - removes selected IDs from the queue
-`{0}<queue name> queue clear` - removes all IDs from the queue
-`{0}<queue name> queue rename <new name>` - changes name of the queue to <new name>
+`{0}<queue name> queue add <IDs>` - adds IDs
+`{0}<queue name> queue show` - shows all IDs
+`{0}<queue name> queue remove <IDs>` - removes selected IDs
+`{0}<queue name> queue clear` - removes all IDs
+`{0}<queue name> queue rename <new name>` - changes name
 `{0}<queue name> queue claim` - claims the queue, so you can use ""my"" as it's name
-`{0}<queue name> queue transfer <user ID>` - transfers ownership of queue to user with specified ID
-`{0}<queue name> info` - shows info about queue
+`{0}<queue name> queue transfer <user ID>` - transfers ownership of the queue
+`{0}<queue name> info` - shows info about the queue
 
 `clear` and `remove` can only be used on your own queue, or a queue without an owner.
 `rename` and `transfer` can only be used if you own the queue.
