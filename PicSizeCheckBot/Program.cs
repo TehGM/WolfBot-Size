@@ -62,6 +62,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.AddNextGameUtility();
                     services.AddUserNotes();
                     services.AddMentions();
+                    services.AddHostedService<HelpHandler>();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();
