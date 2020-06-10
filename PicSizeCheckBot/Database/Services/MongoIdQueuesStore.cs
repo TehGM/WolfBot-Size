@@ -56,6 +56,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             // flush existing inserter to not lose any changes
             if (_batchInserter != null)
                 _batchInserter.Flush();
+            _log?.LogDebug("Creating batch insertert for item type {ItemType} with delay of {Delay}", typeof(IdQueue).Name, delay);
             _batchInserter = new MongoDelayedBatchInserter<Guid, IdQueue>(delay, _log);
             _batchInserter.UpdateCollection(_idQueuesCollection);
         }

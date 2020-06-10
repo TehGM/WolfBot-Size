@@ -67,9 +67,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             await _lock.WaitAsync().ConfigureAwait(false);
             try
             {
+                int batchCount = _batchedInserts.Count;
+                _log?.LogTrace("Beginning batch flush. {BatchedCount} items of type {ItemType} queued.", batchCount, typeof(TItem).Name);
                 foreach (KeyValuePair<TKey, MongoDelayedInsert<TItem>> inserts in _batchedInserts)
                     await _collection.ReplaceOneAsync(inserts.Value.Filter, inserts.Value.Item, inserts.Value.ReplaceOptions ?? _defaultReplaceOptions).ConfigureAwait(false);
                 _batchedInserts.Clear();
+                _log?.LogDebug("Batch flushed. {BatchedCount} items of type {ItemType} added to the database.", batchCount, typeof(TItem).Name);
             }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when flushing a batch"))
             {
