@@ -1,4 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.Options;
 using System.Collections.Generic;
 
 namespace TehGM.WolfBots.PicSizeCheckBot
@@ -21,6 +22,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
         // data
         /// <summary>Collection of user notes.</summary>
+        [BsonDictionaryOptions(DictionaryRepresentation.ArrayOfDocuments)]
         public IDictionary<uint, string> Notes { get; set; }
 
         [BsonConstructor(nameof(ID))]
