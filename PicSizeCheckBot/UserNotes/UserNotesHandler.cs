@@ -28,6 +28,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
         private readonly Regex _removeCommandRegex = new Regex(@"^notes?\s(?:del|delete|remove)(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private readonly Regex _clearCommandRegex = new Regex(@"^notes?\sclear", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private readonly Regex _getCommandRegex = new Regex(@"^notes?(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private readonly Regex _helpCommandRegex = new Regex(@"^notes?\shelp", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         public UserNotesHandler(IHostedWolfClient client, IUserDataStore userDataStore,
             IOptionsMonitor<BotOptions> botOptions, IOptionsMonitor<UserNotesOptions> notesOptions, ILogger<UserNotesHandler> logger)
@@ -57,6 +58,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
 
                 CancellationToken cancellationToken = _cts?.Token ?? default;
 
+                if (_helpCommandRegex.TryGetMatch(command, out _))
+                    await CmdHelpAsync(message, cancellationToken).ConfigureAwait(false);
                 if (_clearCommandRegex.TryGetMatch(command, out _))
                     await CmdClearAsync(message, cancellationToken).ConfigureAwait(false);
                 else if (_addCommandRegex.TryGetMatch(command, out Match addMatch))
@@ -72,6 +75,22 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
         }
 
         #region Commands
+        /* HELP */
+        private async Task CmdHelpAsync(ChatMessage message, CancellationToken cancellationToken = default)
+        {
+            WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, string.Format(@"Notes commands:
+`{0}notes` - get list of your notes
+`{0}notes <ID>` - get a specific note
+`{0}notes add <text>` - adds a new note
+`{0}notes remove <ID>` - delete a specific note
+`{0}notes clear` - removes all your notes
+
+For bug reports or suggestions, contact {1} (ID: {2})",
+_botOptions.CurrentValue.CommandPrefix, owner.Nickname, owner.ID),
+cancellationToken).ConfigureAwait(false);
+        }
+
         /* GET */
         private async Task CmdGetAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
         {
