@@ -375,7 +375,7 @@ cancellationToken).ConfigureAwait(false);
         private async Task<bool> IsQueueOwnerOrBotAdmin(IdQueue queue, uint userID, CancellationToken cancellationToken = default)
         {
             // check if this is owner's queue
-            if (queue.OwnerID != null && queue.OwnerID.Value != userID)
+            if (queue.OwnerID != null && queue.OwnerID.Value == userID)
                 return true;
             // if not, check if bot admin
             UserData user = await _userDataStore.GetUserDataAsync(userID, cancellationToken).ConfigureAwait(false);
