@@ -14,6 +14,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         private IMongoCollection<UserData> _usersDataCollection;
         private readonly ReplaceOptions _replaceOptions;
         private readonly IUserDataCache _cache;
+        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
         public MongoUserDataStore(IMongoConnection databaseConnection, IOptionsMonitor<DatabaseOptions> databaseOptions,
             ILogger<MongoUserDataStore> logger, IUserDataCache cache)
@@ -33,34 +34,50 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
         public async Task<UserData> GetUserDataAsync(uint userID, CancellationToken cancellationToken = default)
         {
-            // check cache first
-            UserData result = _cache.Get(userID);
-            if (result != null)
+            await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                _log.LogTrace("User data for user {UserID} found in cache", userID);
+                // check cache first
+                UserData result = _cache.Get(userID);
+                if (result != null)
+                {
+                    _log.LogTrace("User data for user {UserID} found in cache", userID);
+                    return result;
+                }
+
+                // get from DB
+                _log.LogTrace("Retrieving user data for user {UserID} from database", userID);
+                result = await _usersDataCollection.Find(dbData => dbData.ID == userID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+                // if not found, return default data
+                if (result == null)
+                {
+                    _log.LogTrace("User data for user {UserID} not found, creating new with defaults", userID);
+                    result = new UserData(userID);
+                }
+
+                _cache.AddOrReplace(result);
                 return result;
             }
-
-            // get from DB
-            _log.LogTrace("Retrieving user data for user {UserID} from database", userID);
-            result = await _usersDataCollection.Find(dbData => dbData.ID == userID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-
-            // if not found, return default data
-            if (result == null)
+            finally
             {
-                _log.LogTrace("User data for user {UserID} not found, creating new with defaults", userID);
-                result = new UserData(userID);
+                _lock.Release();
             }
-
-            _cache.AddOrReplace(result);
-            return result;
         }
 
-        public Task SetUserDataAsync(UserData data, CancellationToken cancellationToken = default)
+        public async Task SetUserDataAsync(UserData data, CancellationToken cancellationToken = default)
         {
-            _log.LogTrace("Inserting user data for user {UserID} into database", data.ID);
-            _cache.AddOrReplace(data);
-            return _usersDataCollection.ReplaceOneAsync(dbData => dbData.ID == data.ID, data, _replaceOptions, cancellationToken);
+            await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                _log.LogTrace("Inserting user data for user {UserID} into database", data.ID);
+                _cache.AddOrReplace(data);
+                await _usersDataCollection.ReplaceOneAsync(dbData => dbData.ID == data.ID, data, _replaceOptions, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _lock.Release();
+            }
         }
     }
 }

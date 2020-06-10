@@ -19,6 +19,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         private readonly IGroupConfigCache _cache;
         private readonly MongoDelayedBatchInserter<uint, GroupConfig> _batchInserter;
         private readonly IDisposable _hostStoppingRegistration;
+        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
         public MongoGroupConfigStore(IMongoConnection databaseConnection, IOptionsMonitor<DatabaseOptions> databaseOptions, IHostApplicationLifetime hostLifetime,
             ILogger<MongoGroupConfigStore> logger, IGroupConfigCache cache)
@@ -42,38 +43,54 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
         public async Task<GroupConfig> GetGroupConfigAsync(uint groupID, CancellationToken cancellationToken = default)
         {
-            // check cache first
-            GroupConfig result = _cache.Get(groupID);
-            if (result != null)
+            await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                _log.LogTrace("Group config for group {GroupID} found in cache", groupID);
+                // check cache first
+                GroupConfig result = _cache.Get(groupID);
+                if (result != null)
+                {
+                    _log.LogTrace("Group config for group {GroupID} found in cache", groupID);
+                    return result;
+                }
+
+                // get from DB
+                _log.LogTrace("Retrieving group config for group {GroupID} from database", groupID);
+                result = await _groupConfigsCollection.Find(dbConfig => dbConfig.ID == groupID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+                // if not found, return default data
+                if (result == null)
+                {
+                    _log.LogTrace("Group config for group {GroupID} not found, creating new with defaults", groupID);
+                    result = new GroupConfig(groupID);
+                }
+
+                _cache.AddOrReplace(result);
                 return result;
             }
-
-            // get from DB
-            _log.LogTrace("Retrieving group config for group {GroupID} from database", groupID);
-            result = await _groupConfigsCollection.Find(dbConfig => dbConfig.ID == groupID).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-
-            // if not found, return default data
-            if (result == null)
+            finally
             {
-                _log.LogTrace("Group config for group {GroupID} not found, creating new with defaults", groupID);
-                result = new GroupConfig(groupID);
+                _lock.Release();
             }
-
-            _cache.AddOrReplace(result);
-            return result;
         }
 
-        public Task SetGroupConfigAsync(GroupConfig config, bool instant, CancellationToken cancellationToken = default)
+        public async Task SetGroupConfigAsync(GroupConfig config, bool instant, CancellationToken cancellationToken = default)
         {
-            _log.LogTrace("Inserting group config for group {GroupID} into database", config.ID);
-            _cache.AddOrReplace(config);
-            Expression<Func<GroupConfig, bool>> selector = dbConfig => dbConfig.ID == config.ID;
-            if (instant)
-                return _groupConfigsCollection.ReplaceOneAsync(selector, config, _replaceOptions, cancellationToken);
-            else
-                return _batchInserter.BatchAsync(config.ID, new MongoDelayedInsert<GroupConfig>(selector, config, _replaceOptions));
+            await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                _log.LogTrace("Inserting group config for group {GroupID} into database", config.ID);
+                _cache.AddOrReplace(config);
+                Expression<Func<GroupConfig, bool>> selector = dbConfig => dbConfig.ID == config.ID;
+                if (instant)
+                    await _groupConfigsCollection.ReplaceOneAsync(selector, config, _replaceOptions, cancellationToken).ConfigureAwait(false);
+                else
+                    await _batchInserter.BatchAsync(config.ID, new MongoDelayedInsert<GroupConfig>(selector, config, _replaceOptions)).ConfigureAwait(false);
+            }
+            finally
+            {
+                _lock.Release();
+            }
         }
 
         public override void Dispose()
