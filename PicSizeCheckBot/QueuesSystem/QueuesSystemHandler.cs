@@ -62,6 +62,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
                 }
 
                 Match match = _queueCommandRegex.Match(command);
+                if (!match.Success)
+                    return;
 
                 string queueName = match.Groups[1].Value.Trim();
                 string commandSwitch = match.Groups[2]?.Value?.ToLowerInvariant().Trim();
