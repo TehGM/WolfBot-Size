@@ -282,7 +282,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             {
                 img = await DownloadImageAsync(imageUrl, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex.LogAsError(this._log, "Failed downloading image {ImageURL}", cancellationToken))
+            catch (Exception ex) when (ex.LogAsError(this._log, "Failed downloading image {ImageURL}", imageUrl))
             {
                 await _client.ReplyTextAsync(message, $"/alert Failed downloading image: {ex.Message}\r\nImage URL: {imageUrl}", cancellationToken).ConfigureAwait(false);
                 return;
