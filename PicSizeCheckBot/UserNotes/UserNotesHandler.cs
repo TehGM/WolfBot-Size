@@ -106,6 +106,7 @@ cancellationToken).ConfigureAwait(false);
 
                 // concat all
                 int maxMsgLength = _notesOptions.CurrentValue.MaxMessageLength;
+                int maxNoteLength = _notesOptions.CurrentValue.MaxLengthPerBulkNote;
                 List<string> entries = new List<string>(data.Notes.Select(pair => $"{pair.Key}: {pair.Value}"));
                 // keep list of entries, so can remove last one if adding "not all fit message" requires that
                 List<string> includedEntries = new List<string>(data.Notes.Count);
@@ -115,8 +116,12 @@ cancellationToken).ConfigureAwait(false);
                     string e = entries[i];
                     if (includedLength + e.Length + "\r\n".Length <= maxMsgLength)
                     {
-                        includedEntries.Add(e);
-                        includedLength += e.Length;
+                        string include = e;
+                        if (e.Length > maxNoteLength)
+                            include = e.Remove(maxNoteLength).Trim() + "...";
+
+                        includedEntries.Add(include);
+                        includedLength += include.Length;
                     }
                     else break;
                 }
