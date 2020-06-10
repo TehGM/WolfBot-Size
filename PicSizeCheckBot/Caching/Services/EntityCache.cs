@@ -30,8 +30,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
                 _cachedEntities.Clear();
         }
 
-        public IEnumerable<TEntity> Find(Func<CachedEntity<TEntity>, bool> predicate)
+        public IEnumerable<TEntity> Find(Func<CachedEntity<TEntity>, bool> predicate, bool excludeExpired = true)
         {
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
+
+            if (excludeExpired)
+                predicate = e => predicate(e) && !IsEntityExpired(e);
+
             lock (_cachedEntities)
                 return _cachedEntities.Where(pair => predicate(pair.Value)).Select(e => e.Value.Entity).ToImmutableArray();
         }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Caching.Services;
+using TehGM.WolfBots.PicSizeCheckBot.Mentions;
 using TehGM.WolfBots.PicSizeCheckBot.NextGameUtility;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.WolfBots.PicSizeCheckBot.QueuesSystem;
@@ -42,6 +43,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.Configure<CachingOptions>(UserDataCache.OptionName, context.Configuration.GetSection("Caching:" + UserDataCache.OptionName));
                     services.Configure<CachingOptions>(GroupConfigCache.OptionName, context.Configuration.GetSection("Caching:" + GroupConfigCache.OptionName));
                     services.Configure<CachingOptions>(IdQueueCache.OptionName, context.Configuration.GetSection("Caching:" + IdQueueCache.OptionName));
+                    services.Configure<CachingOptions>(MentionConfigCache.OptionName, context.Configuration.GetSection("Caching:" + MentionConfigCache.OptionName));
 
                     // add framework services
                     services.AddHttpClient();
@@ -58,6 +60,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     services.AddQueuesSystem();
                     services.AddNextGameUtility();
                     services.AddUserNotes();
+                    services.AddMentions();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();

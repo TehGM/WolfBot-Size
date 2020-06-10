@@ -14,6 +14,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Options
         public string GroupConfigsCollectionName { get; set; } = "GroupConfigs";
         public string IdQueuesCollectionName { get; set; } = "IdQueues";
         public string UserNotesCollectionName { get; set; } = "UserNotes";
+        public string MentionConfigsCollectionName { get; set; } = "Mentions";
 
         // inserter batch delays
         public TimeSpan IdQueueBatchDelay { get; set; } = TimeSpan.FromMinutes(10);
