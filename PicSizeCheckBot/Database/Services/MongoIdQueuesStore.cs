@@ -13,12 +13,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 {
     public class MongoIdQueuesStore : MongoRepositoryBase, IIdQueueStore, IDisposable
     {
-        private readonly ILogger<MongoIdQueuesStore> _log;
+        // db stuff
         private IMongoCollection<IdQueue> _idQueuesCollection;
+        private MongoDelayedBatchInserter<Guid, IdQueue> _batchInserter;
         private readonly ReplaceOptions _replaceOptions;
         private readonly IIdQueueCache _cache;
-        private readonly MongoDelayedBatchInserter<Guid, IdQueue> _batchInserter;
+        // event registrations
         private readonly IDisposable _hostStoppingRegistration;
+        private readonly IDisposable _configChangeRegistration;
+        // misc
+        private readonly ILogger<MongoIdQueuesStore> _log;
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
         public MongoIdQueuesStore(IMongoConnection databaseConnection, IOptionsMonitor<DatabaseOptions> databaseOptions, IHostApplicationLifetime hostLifetime,
@@ -28,16 +32,31 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             this._log = logger;
             this._cache = cache;
             this._replaceOptions = new ReplaceOptions() { IsUpsert = true, BypassDocumentValidation = false };
-            this._batchInserter = new MongoDelayedBatchInserter<Guid, IdQueue>(TimeSpan.FromMinutes(10));
+            this.RecreateBatchInserter();
             this.OnMongoClientChanged(base.MongoConnection.Client);
 
             this._hostStoppingRegistration = hostLifetime.ApplicationStopping.Register(_batchInserter.Flush);
+            this._configChangeRegistration = base.DatabaseOptions.OnChange(_ => RecreateBatchInserter());
         }
 
         protected override void OnMongoClientChanged(MongoClient newClient)
         {
             DatabaseOptions options = base.DatabaseOptions.CurrentValue;
             _idQueuesCollection = newClient.GetDatabase(options.DatabaseName).GetCollection<IdQueue>(options.IdQueuesCollectionName);
+            _batchInserter?.UpdateCollection(_idQueuesCollection);
+        }
+
+        private void RecreateBatchInserter()
+        {
+            // validate delay is valid
+            TimeSpan delay = base.DatabaseOptions.CurrentValue.IdQueueBatchDelay;
+            if (delay <= TimeSpan.Zero)
+                throw new ArgumentException("Batching delay must be greater than 0", nameof(base.DatabaseOptions.CurrentValue.IdQueueBatchDelay));
+
+            // flush existing inserter to not lose any changes
+            if (_batchInserter != null)
+                _batchInserter.Flush();
+            _batchInserter = new MongoDelayedBatchInserter<Guid, IdQueue>(delay);
             _batchInserter.UpdateCollection(_idQueuesCollection);
         }
 
@@ -116,6 +135,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
 
         public override void Dispose()
         {
+            this._configChangeRegistration?.Dispose();
             this._hostStoppingRegistration?.Dispose();
             this._batchInserter?.Flush();
             this._batchInserter?.Dispose();
