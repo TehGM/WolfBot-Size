@@ -60,7 +60,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
 
                 if (_helpCommandRegex.TryGetMatch(command, out _))
                     await CmdHelpAsync(message, cancellationToken).ConfigureAwait(false);
-                if (_clearCommandRegex.TryGetMatch(command, out _))
+                else if (_clearCommandRegex.TryGetMatch(command, out _))
                     await CmdClearAsync(message, cancellationToken).ConfigureAwait(false);
                 else if (_addCommandRegex.TryGetMatch(command, out Match addMatch))
                     await CmdAddAsync(message, addMatch.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
