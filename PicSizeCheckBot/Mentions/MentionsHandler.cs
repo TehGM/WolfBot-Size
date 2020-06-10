@@ -50,7 +50,6 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
                 IEnumerable<MentionConfig> allMentions = await _mentionConfigStore.GetAllAsync(cancellationToken).ConfigureAwait(false);
                 if (allMentions?.Any() == true)
                 {
-                    string text = null;
                     foreach (MentionConfig mentionConfig in allMentions)
                     {
                         if (!mentionConfig.Patterns.Any(pattern => pattern.Regex.IsMatch(message.Text)))
@@ -58,7 +57,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
                         if (mentionConfig.IgnoreSelf && mentionConfig.ID == message.SenderID.Value)
                             continue;
 
-                        text ??= await BuildMentionMessage(message, mentionConfig, cancellationToken).ConfigureAwait(false);
+                        string text = await BuildMentionMessage(message, mentionConfig, cancellationToken).ConfigureAwait(false);
                         await _client.SendPrivateTextMessageAsync(mentionConfig.ID, text, cancellationToken).ConfigureAwait(false);
                     }
                 }

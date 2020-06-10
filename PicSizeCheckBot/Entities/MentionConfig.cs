@@ -13,7 +13,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         public string MessageTemplate { get; set; }
         public bool IgnoreSelf { get; set; } = true;
 
-        public ICollection<MentionPattern> Patterns { get; }
+        public ICollection<MentionPattern> Patterns { get; set; }
 
         [BsonConstructor(nameof(ID))]
         public MentionConfig(uint userID)
