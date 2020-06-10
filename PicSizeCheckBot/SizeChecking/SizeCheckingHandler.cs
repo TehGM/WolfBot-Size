@@ -121,11 +121,15 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             }
 
             // check user is admin or owner
-            WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
-            if (member?.HasAdminPrivileges != true)
+            string mode = regexMatch.Groups[1]?.Value?.ToLowerInvariant();
+            if (!string.IsNullOrEmpty(mode))
             {
-                await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
-                return;
+                WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
+                if (member?.HasAdminPrivileges != true && )
+                {
+                    await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
+                    return;
+                }
             }
 
             // check how the user wants to change the setting
@@ -141,7 +145,6 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             GroupConfig config = await GetConfigAsync<GroupConfig>(message, cancellationToken).ConfigureAwait(false);
 
             // change settings based on mode
-            string mode = regexMatch.Groups[1]?.Value?.ToLowerInvariant();
             switch (mode)
             {
                 // if no mode or switch privided, simply list current settings
