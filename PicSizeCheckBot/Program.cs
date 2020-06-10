@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using TehGM.WolfBots.Options;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Caching.Services;
-using TehGM.WolfBots.PicSizeCheckBot.Mentions;
 using TehGM.WolfBots.PicSizeCheckBot.NextGameUtility;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.WolfBots.PicSizeCheckBot.QueuesSystem;
