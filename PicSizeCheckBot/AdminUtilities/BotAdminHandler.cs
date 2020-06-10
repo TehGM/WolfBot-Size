@@ -51,6 +51,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                 CancellationToken cancellationToken = _cts?.Token ?? default;
                 if (command.StartsWith("join", StringComparison.OrdinalIgnoreCase))
                     await CmdJoinAsync(message, command, cancellationToken).ConfigureAwait(false);
+                else if (command.StartsWith("leave", StringComparison.OrdinalIgnoreCase))
+                    await CmdLeaveAsync(message, command, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
@@ -74,13 +76,64 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
             try
             {
                 WolfGroup group = await _client.JoinGroupAsync(groupName, cancellationToken).ConfigureAwait(false);
-                await _client.ReplyTextAsync(message, $"(y) Joined [{group.Name}]", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(y) Joined [{group.Name}].", cancellationToken).ConfigureAwait(false);
             }
             catch (MessageSendingException ex)
             {
                 if (ex.Response is WolfResponse response && response.ErrorCode != null)
                     await _client.ReplyTextAsync(message,
                         $"(n) Failed joining group: {response.ErrorCode.Value.GetDescription(ex.SentMessage.Command)}",
+                        cancellationToken).ConfigureAwait(false);
+                else
+                    throw;
+            }
+        }
+
+        private async Task CmdLeaveAsync(ChatMessage message, string command, CancellationToken cancellationToken = default)
+        {
+            if (!await CheckIfAdminAsync(message, cancellationToken).ConfigureAwait(false))
+                return;
+
+            string groupName = null;
+            if (command.Length > "leave".Length)
+                groupName = command.Substring("leave".Length).Trim();
+
+            if (string.IsNullOrWhiteSpace(groupName))
+            {
+                if (!message.IsGroupMessage)
+                {
+                    await _client.ReplyTextAsync(message, "(n) Please provide group name.", cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+
+                await _client.LeaveGroupAsync(message.RecipientID, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+
+            try
+            {
+                // get group
+                WolfGroup group = await _client.GetGroupAsync(groupName, cancellationToken).ConfigureAwait(false);
+                if (group == null)
+                {
+                    await _client.ReplyTextAsync(message, $"(n) Group \"{groupName}\" not found.", cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+                // leave it
+                await _client.LeaveGroupAsync(group.ID, cancellationToken).ConfigureAwait(false);
+
+                // send acknowledgment
+                if (!message.IsGroupMessage || group.ID != message.RecipientID)
+                    await _client.ReplyTextAsync(message, $"(y) Left [{group.Name}].", cancellationToken).ConfigureAwait(false);
+                else
+                    await _client.SendPrivateTextMessageAsync(message.SenderID.Value, $"(y) Left [{group.Name}].", cancellationToken).ConfigureAwait(false);
+            }
+            catch (MessageSendingException ex)
+            {
+                if (ex.Response is WolfResponse response && response.ErrorCode != null)
+                    await _client.ReplyTextAsync(message,
+                        $"/alert Failed leaving group: {response.ErrorCode.Value.GetDescription(ex.SentMessage.Command)}",
                         cancellationToken).ConfigureAwait(false);
                 else
                     throw;
