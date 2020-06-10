@@ -55,6 +55,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                     await CmdLeaveAsync(message, command, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
+            catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendToGroup) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
         }
 

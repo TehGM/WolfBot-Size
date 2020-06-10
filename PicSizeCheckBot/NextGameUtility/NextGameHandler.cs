@@ -10,6 +10,7 @@ using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
 using TehGM.Wolfringo.Hosting;
 using TehGM.Wolfringo.Messages;
+using TehGM.Wolfringo.Messages.Responses;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
 {
@@ -69,6 +70,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
                     await CmdNextAsync(message, nextMatch.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
+            catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendToGroup) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
         }
 

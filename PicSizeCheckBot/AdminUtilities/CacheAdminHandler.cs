@@ -11,6 +11,7 @@ using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
 using TehGM.Wolfringo.Hosting;
 using TehGM.Wolfringo.Messages;
+using TehGM.Wolfringo.Messages.Responses;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 {
@@ -101,6 +102,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                 _log.LogInformation("All database caches cleared by {UserID} ({UserNickname})", user.ID, user.Nickname);
             }
             catch (TaskCanceledException) { }
+            catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendToGroup) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
         }
 
