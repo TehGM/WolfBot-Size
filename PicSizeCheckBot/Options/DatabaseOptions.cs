@@ -17,5 +17,6 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Options
         // inserter batch delays
         public TimeSpan IdQueueBatchDelay { get; set; } = TimeSpan.FromMinutes(10);
         public TimeSpan GroupConfigsBatchDelay { get; set; } = TimeSpan.FromMinutes(10);
+        public TimeSpan UserDataBatchDelay { get; set; } = TimeSpan.FromMinutes(5);
     }
 }
