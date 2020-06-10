@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -17,15 +18,18 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         private TaskCompletionSource<object> _batchTcs;
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
-        public MongoDelayedBatchInserter(TimeSpan delay, IEqualityComparer<TKey> comparer)
+        private readonly ILogger _log;
+
+        public MongoDelayedBatchInserter(TimeSpan delay, IEqualityComparer<TKey> comparer, ILogger log = null)
         {
             this._delay = delay;
+            this._log = log;
             this._batchedInserts = new Dictionary<TKey, MongoDelayedInsert<TItem>>(comparer);
             this._defaultReplaceOptions = new ReplaceOptions() { IsUpsert = true, BypassDocumentValidation = false };
         }
 
-        public MongoDelayedBatchInserter(TimeSpan delay)
-            : this(delay, EqualityComparer<TKey>.Default) { }
+        public MongoDelayedBatchInserter(TimeSpan delay, ILogger log = null)
+            : this(delay, EqualityComparer<TKey>.Default, log) { }
 
         public void UpdateCollection(IMongoCollection<TItem> collection)
         {
@@ -66,6 +70,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
                 foreach (KeyValuePair<TKey, MongoDelayedInsert<TItem>> inserts in _batchedInserts)
                     await _collection.ReplaceOneAsync(inserts.Value.Filter, inserts.Value.Item, inserts.Value.ReplaceOptions ?? _defaultReplaceOptions).ConfigureAwait(false);
                 _batchedInserts.Clear();
+            }
+            catch (Exception ex)
+            {
+                _log?.LogError(ex, "Error occured when flushing a batch");
+                throw;
             }
             finally
             {
