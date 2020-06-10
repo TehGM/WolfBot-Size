@@ -58,7 +58,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();
-            await host.RunAsync();
+            await host.RunAsync().ConfigureAwait(false);
         }
 
         private static void ConfigureSerilog(HostBuilderContext context, LoggerConfiguration config)
