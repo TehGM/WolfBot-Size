@@ -125,7 +125,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             if (!string.IsNullOrEmpty(mode))
             {
                 WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
-                if (member?.HasAdminPrivileges != true && )
+                if (member?.HasAdminPrivileges != true)
                 {
                     await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
                     return;
