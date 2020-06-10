@@ -28,7 +28,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             this._cache = cache;
             this._replaceOptions = new ReplaceOptions() { IsUpsert = true, BypassDocumentValidation = false };
             this._batchInserter = new MongoDelayedBatchInserter<uint, GroupConfig>(TimeSpan.FromMinutes(10));
-            this.UpdateBatchInserter();
+            this.OnMongoClientChanged(base.MongoConnection.Client);
 
             this._hostStoppingRegistration = hostLifetime.ApplicationStopping.Register(_batchInserter.Flush);
         }
@@ -37,13 +37,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         {
             DatabaseOptions options = base.DatabaseOptions.CurrentValue;
             _groupConfigsCollection = newClient.GetDatabase(options.DatabaseName).GetCollection<GroupConfig>(options.GroupConfigsCollectionName);
-            this.UpdateBatchInserter();
-        }
-
-        private void UpdateBatchInserter()
-        {
-            if (_batchInserter != null && _groupConfigsCollection != null)
-                _batchInserter.UpdateCollection(_groupConfigsCollection);
+            _batchInserter.UpdateCollection(_groupConfigsCollection);
         }
 
         public async Task<GroupConfig> GetGroupConfigAsync(uint groupID, CancellationToken cancellationToken = default)

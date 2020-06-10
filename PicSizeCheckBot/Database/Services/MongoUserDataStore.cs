@@ -22,6 +22,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             this._log = logger;
             this._cache = cache;
             this._replaceOptions = new ReplaceOptions() { IsUpsert = true, BypassDocumentValidation = false };
+            this.OnMongoClientChanged(base.MongoConnection.Client);
         }
 
         protected override void OnMongoClientChanged(MongoClient newClient)

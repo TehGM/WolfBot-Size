@@ -14,8 +14,6 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         {
             this.DatabaseOptions = databaseOptions;
             this.MongoConnection = databaseConnection;
-
-            OnMongoClientChanged(this.MongoConnection.Client);
             this.MongoConnection.ClientChanged += OnMongoClientChanged;
         }
 
