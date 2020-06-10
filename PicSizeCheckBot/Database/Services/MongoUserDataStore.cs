@@ -49,7 +49,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         private void RecreateBatchInserter()
         {
             // validate delay is valid
-            TimeSpan delay = base.DatabaseOptions.CurrentValue.GroupConfigsBatchDelay;
+            TimeSpan delay = base.DatabaseOptions.CurrentValue.UserDataBatchDelay;
             if (delay <= TimeSpan.Zero)
                 throw new ArgumentException("Batching delay must be greater than 0", nameof(base.DatabaseOptions.CurrentValue.GroupConfigsBatchDelay));
 

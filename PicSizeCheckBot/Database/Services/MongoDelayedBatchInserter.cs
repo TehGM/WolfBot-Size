@@ -71,9 +71,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
                     await _collection.ReplaceOneAsync(inserts.Value.Filter, inserts.Value.Item, inserts.Value.ReplaceOptions ?? _defaultReplaceOptions).ConfigureAwait(false);
                 _batchedInserts.Clear();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex.LogAsError(_log, "Error occured when flushing a batch"))
             {
-                _log?.LogError(ex, "Error occured when flushing a batch");
                 throw;
             }
             finally
