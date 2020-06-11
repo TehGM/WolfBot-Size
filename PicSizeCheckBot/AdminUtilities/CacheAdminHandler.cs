@@ -19,16 +19,21 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
     {
         private readonly IHostedWolfClient _client;
         private readonly IOptionsMonitor<BotOptions> _botOptions;
+        private readonly ILogger _log;
+        // caches
         private readonly IUserDataCache _userDataCache;
         private readonly IGroupConfigCache _groupConfigCache;
         private readonly IIdQueueCache _idQueueCache;
-        private readonly IUserDataStore _userDataStore;
         private readonly IMentionConfigCache _mentionConfigCache;
-        private readonly ILogger _log;
+        // stores
+        private readonly IUserDataStore _userDataStore;
+        private readonly IIdQueueStore _idQueueStore;
+        private readonly IGroupConfigStore _groupConfigStore;
 
         private CancellationTokenSource _cts;
 
-        public CacheAdminHandler(IHostedWolfClient client, IUserDataStore userDataStore,
+        public CacheAdminHandler(IHostedWolfClient client, 
+            IUserDataStore userDataStore, IIdQueueStore idQueueStore, IGroupConfigStore groupConfigStore,
             IUserDataCache userDataCache, IGroupConfigCache groupConfigCache, IIdQueueCache idQueueCache, IMentionConfigCache mentionConfigCache,
             IOptionsMonitor<BotOptions> botOptions, ILogger<CacheAdminHandler> logger)
         {
@@ -36,11 +41,15 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
             this._log = logger;
             this._botOptions = botOptions;
             this._client = client;
-            this._userDataStore = userDataStore;
+            // caches
             this._groupConfigCache = groupConfigCache;
             this._userDataCache = userDataCache;
             this._idQueueCache = idQueueCache;
             this._mentionConfigCache = mentionConfigCache;
+            // stores
+            this._userDataStore = userDataStore;
+            this._idQueueStore = idQueueStore;
+            this._groupConfigStore = groupConfigStore;
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
@@ -69,6 +78,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                     await _client.ReplyTextAsync(message, "(n) You are not permitted to do this!", cancellationToken).ConfigureAwait(false);
                     return;
                 }
+
+                // flush all batches first to prevent data loss
+                _groupConfigStore.FlushBatch();
+                _idQueueStore.FlushBatch();
+                _userDataStore.FlushBatch();
 
                 // get current counts for reporting
                 int userDataCacheCount = _userDataCache.CachedCount;

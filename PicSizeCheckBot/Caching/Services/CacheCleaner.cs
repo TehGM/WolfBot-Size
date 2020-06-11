@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TehGM.WolfBots.PicSizeCheckBot.Database;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
 {
@@ -17,20 +18,31 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
 
         private readonly ILogger _log;
         private readonly IOptionsMonitor<CachingOptions> _cachingOptions;
+        // caches
         private readonly IUserDataCache _userDataCache;
         private readonly IGroupConfigCache _groupConfigCache;
         private readonly IIdQueueCache _idQueueCache;
         private readonly IMentionConfigCache _mentionConfigCache;
+        // stores
+        private readonly IUserDataStore _userDataStore;
+        private readonly IIdQueueStore _idQueueStore;
+        private readonly IGroupConfigStore _groupConfigStore;
 
         public CacheCleaner(ILogger<CacheCleaner> logger, IOptionsMonitor<CachingOptions> cachingOptions,
+            IUserDataStore userDataStore, IIdQueueStore idQueueStore, IGroupConfigStore groupConfigStore,
             IUserDataCache userDataCache, IGroupConfigCache groupConfigCache, IIdQueueCache idQueueCache, IMentionConfigCache mentionConfigCache)
         {
             this._log = logger;
             this._cachingOptions = cachingOptions;
+            // caches
             this._userDataCache = userDataCache;
             this._groupConfigCache = groupConfigCache;
             this._idQueueCache = idQueueCache;
             this._mentionConfigCache = mentionConfigCache;
+            // stores
+            this._userDataStore = userDataStore;
+            this._idQueueStore = idQueueStore;
+            this._groupConfigStore = groupConfigStore;
 
             this._optionsChangeHandle = this._cachingOptions.OnChange(_ =>
             {
@@ -38,7 +50,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
             });
         }
 
-        private async Task AutoClearLoopAsync<TKey, TEntity>(IEntityCache<TKey, TEntity> cache, string optionsName, 
+        private async Task AutoClearLoopAsync<TKey, TEntity>(IEntityCache<TKey, TEntity> cache, string optionsName, IBatchingStore store,
             CancellationToken cancellationToken = default) where TEntity : IEntity<TKey>
         {
             CachingOptions options = _cachingOptions.Get(optionsName);
@@ -53,6 +65,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
             while (!cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(options.Lifetime, cancellationToken).ConfigureAwait(false);
+                // flush batch to prevent data loss
+                store?.FlushBatch();
+                // find and remove entities from cache
                 IEnumerable<TEntity> expired = cache.Find(e => e.IsExpired(options.Lifetime));
                 foreach (TEntity entity in expired)
                     cache.Remove(entity.ID);
@@ -66,10 +81,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Caching.Services
             this._cts?.Dispose();
             this._cts = CancellationTokenSource.CreateLinkedTokenSource(_hostedCancellationToken);
 
-            _ = AutoClearLoopAsync(_userDataCache, UserDataCache.OptionName, _cts.Token);
-            _ = AutoClearLoopAsync(_groupConfigCache, GroupConfigCache.OptionName, _cts.Token);
-            _ = AutoClearLoopAsync(_idQueueCache, IdQueueCache.OptionName, _cts.Token);
-            _ = AutoClearLoopAsync(_mentionConfigCache, MentionConfigCache.OptionName, _cts.Token);
+            _ = AutoClearLoopAsync(_userDataCache, UserDataCache.OptionName, _userDataStore, _cts.Token);
+            _ = AutoClearLoopAsync(_groupConfigCache, GroupConfigCache.OptionName, _groupConfigStore, _cts.Token);
+            _ = AutoClearLoopAsync(_idQueueCache, IdQueueCache.OptionName, _idQueueStore, _cts.Token);
+            _ = AutoClearLoopAsync(_mentionConfigCache, MentionConfigCache.OptionName, null, _cts.Token);
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)

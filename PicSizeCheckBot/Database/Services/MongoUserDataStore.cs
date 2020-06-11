@@ -113,6 +113,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             }
         }
 
+        public void FlushBatch()
+            => _batchInserter?.Flush();
+
         public override void Dispose()
         {
             this._configChangeRegistration?.Dispose();

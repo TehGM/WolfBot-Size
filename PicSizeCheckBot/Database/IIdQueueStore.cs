@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Database
 {
-    public interface IIdQueueStore
+    public interface IIdQueueStore : IBatchingStore
     {
         Task<IdQueue> GetIdQueueByNameAsync(string name, CancellationToken cancellationToken = default);
         Task<IdQueue> GetIdQueueByOwnerAsync(uint ownerID, CancellationToken cancellationToken = default);

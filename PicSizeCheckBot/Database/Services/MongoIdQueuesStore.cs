@@ -119,6 +119,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
             }
         }
 
+        public void FlushBatch()
+            => _batchInserter?.Flush();
+
         public async Task SetIdQueueAsync(IdQueue queue, CancellationToken cancellationToken = default)
         {
             await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);

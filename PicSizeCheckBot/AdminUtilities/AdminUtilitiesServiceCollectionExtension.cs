@@ -16,10 +16,15 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(services));
 
             services.TryAddSingleton<IMongoConnection, MongoConnection>();
+            // caches
             services.TryAddSingleton<IIdQueueCache, IdQueueCache>();
-            services.TryAddSingleton<IUserDataStore, MongoUserDataStore>();
             services.TryAddSingleton<IUserDataCache, UserDataCache>();
             services.TryAddSingleton<IGroupConfigCache, GroupConfigCache>();
+            // stores
+            services.TryAddSingleton<IUserDataStore, MongoUserDataStore>();
+            services.TryAddSingleton<IIdQueueStore, MongoIdQueuesStore>();
+            services.TryAddSingleton<IGroupConfigStore, MongoGroupConfigStore>();
+            //handlers
             services.AddHostedService<CacheAdminHandler>();
             services.AddHostedService<BotAdminHandler>();
 
