@@ -2,8 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
@@ -50,22 +48,13 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
                 WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
                 await _client.ReplyTextAsync(message,
-                    string.Format(@"I will post size of images posted in this group, unless this feature is disabled by bot admin.
-You can check when will I measure pics using
-`{0}listen`
-To pull next guesswhat game, use 
-`{0}next`
-You can set starting game to pull using 
-`{0}next <gameID>`
-Alternatively, I can check ap bot what was last game and automatically start from it
-`{0}next continue`
-I am able to update AP bot first message with ID if I am an admin. Simply use
-`{0}next update <gameID>`
-<gameID> is optional - if not specified, I'll use the same ID I'd use for ""{0}next""
-Also, I can post image from link and automatically post it's size
-`{0}check <link>`
-You can decide whether I should post URLs for checked images using
-`{0}posturl`
+                    string.Format(@"I will post size of images posted in this group.
+`{0}listen` - shows current listen mode. Admins can also also change mode using it's name.
+`{0}next <gameID>` - pulls next guesswhat game. <gameID> is optional.
+`{0}next continue` - checks AP bot for ID of next game.
+`{0}next update <gameID>` - updates AP bot with next game ID. <gameID> is optional.
+`{0}check <link>` - checks size of linked image.
+`{0}posturl <on/off>` - changes if I should post URL of checked image.
 
 I also can store your notes. For more help, use
 `{0}notes help`
@@ -73,7 +62,8 @@ I also can store your notes. For more help, use
 For help regarding queues system, use
 `{0}queues help`
 
-In case of any questions or suggestions, please contact {1} (ID: {2}).",
+In case of any questions or suggestions, please contact {1} (ID: {2}).
+Using Wolfringo library, v0.2.4-rc1",
 _botOptions.CurrentValue.CommandPrefix, owner.Nickname, owner.ID.ToString()),
                     cancellationToken).ConfigureAwait(false);
             }
