@@ -1,4 +1,4 @@
-﻿#define TEST_ONLY
+﻿//#define TEST_ONLY
 
 using MongoDB.Driver;
 using Serilog;
@@ -69,8 +69,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
             MongoClient client = new MongoClient(settings.ConnectionString);
             IMongoDatabase db = client.GetDatabase(settings.DatabaseName);
 
-            //await MigrateEntitiesAsync<IdQueue>(db, "IdQueues", log, PerformQueueMigration);
-            //await MigrateEntitiesAsync<MentionConfig>(db, "Mentions", log, PerformMentionMigration);
+            await MigrateEntitiesAsync<IdQueue>(db, "IdQueues", log, PerformQueueMigration);
+            await MigrateEntitiesAsync<MentionConfig>(db, "Mentions", log, PerformMentionMigration);
             await MigrateEntitiesAsync<UserData>(db, "UsersData", log, PerformUserDataMigration);
 
             log.Information("Done");
@@ -82,6 +82,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
         private static async Task MigrateEntitiesAsync<T>(IMongoDatabase db, string collectionName, ILogger log,
             MigrationDelegate<T> migrationMethod)
         {
+            Console.WriteLine();
             Console.WriteLine();
             log.Information("Starting {EntityType} migration", typeof(T).Name);
             log.Debug("Opening collection {CollectionName}", collectionName);
