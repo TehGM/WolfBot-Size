@@ -5,6 +5,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -68,8 +69,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
             MongoClient client = new MongoClient(settings.ConnectionString);
             IMongoDatabase db = client.GetDatabase(settings.DatabaseName);
 
-            await MigrateEntitiesAsync<IdQueue>(db, "IdQueues", log, PerformQueueMigration);
-
+            //await MigrateEntitiesAsync<IdQueue>(db, "IdQueues", log, PerformQueueMigration);
+            await MigrateEntitiesAsync<MentionConfig>(db, "Mentions", log, PerformMentionMigration);
 
             log.Information("Done");
             Console.ReadLine();
@@ -106,19 +107,52 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
 
         private static bool PerformQueueMigration(IdQueue entity, ILogger log, out IdQueue newEntity, out Expression<Func<IdQueue, bool>> selector)
         {
-            selector = queue => queue.ID == entity.ID;
+            selector = dbEntity => dbEntity.ID == entity.ID;
 
+            newEntity = entity;
             string newName = ToUtf8(entity.Name);
             if (newName.Equals(entity.Name))
             {
                 log.Debug("Skipping: {OldEntityValue}", entity.Name);
-                newEntity = entity;
                 return false;
             }
 
             log.Debug("Updating: {OldEntityValue} -> {NewEntityValue}", entity.Name, newName);
-            newEntity = entity;
             newEntity.Name = newName;
+            return true;
+        }
+
+        private static bool PerformMentionMigration(MentionConfig entity, ILogger log, out MentionConfig newEntity,
+            out Expression<Func<MentionConfig, bool>> selector)
+        {
+            selector = dbEntity => dbEntity.ID == entity.ID;
+
+            newEntity = entity;
+
+            List<MentionPattern> newPatterns = new List<MentionPattern>(entity.Patterns.Count);
+            int updatedCount = 0;
+            foreach (MentionPattern pattern in entity.Patterns)
+            {
+                string oldPatternText = (string)pattern.GetType().GetField("_pattern", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(pattern);
+                string newPatternText = ToUtf8(oldPatternText);
+                newPatterns.Add(new MentionPattern(newPatternText, pattern.IgnoreCase));
+                if (!newPatternText.Equals(oldPatternText))
+                {
+                    log.Debug("Updating {ID}: {OldEntityValue} -> {NewEntityValue}", entity.ID, oldPatternText, newPatternText);
+                    updatedCount++;
+                }
+            }
+
+            if (updatedCount == 0)
+            {
+                log.Debug("Skipping: {OldEntityValue}", entity.ID);
+                return false;
+            }
+
+            newEntity.Patterns.Clear();
+            foreach (MentionPattern pattern in newPatterns)
+                newEntity.Patterns.Add(pattern);
+
             return true;
         }
 
