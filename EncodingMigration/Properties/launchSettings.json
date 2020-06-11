@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EncodingMigration": {
+      "commandName": "Project",
+      "commandLineArgs": "dev"
+    }
+  }
+}
