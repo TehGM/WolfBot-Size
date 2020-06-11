@@ -44,7 +44,7 @@
     <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.3.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
-    <PackageReference Include="Wolfringo" Version="0.2.4-rc7" />
+    <PackageReference Include="Wolfringo" Version="0.2.4-rc8" />
   </ItemGroup>
 
 </Project>
