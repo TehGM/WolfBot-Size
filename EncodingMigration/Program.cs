@@ -70,7 +70,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
             IMongoDatabase db = client.GetDatabase(settings.DatabaseName);
 
             //await MigrateEntitiesAsync<IdQueue>(db, "IdQueues", log, PerformQueueMigration);
-            await MigrateEntitiesAsync<MentionConfig>(db, "Mentions", log, PerformMentionMigration);
+            //await MigrateEntitiesAsync<MentionConfig>(db, "Mentions", log, PerformMentionMigration);
+            await MigrateEntitiesAsync<UserData>(db, "UsersData", log, PerformUserDataMigration);
 
             log.Information("Done");
             Console.ReadLine();
@@ -152,6 +153,39 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
             newEntity.Patterns.Clear();
             foreach (MentionPattern pattern in newPatterns)
                 newEntity.Patterns.Add(pattern);
+
+            return true;
+        }
+
+        private static bool PerformUserDataMigration(UserData entity, ILogger log, out UserData newEntity,
+            out Expression<Func<UserData, bool>> selector)
+        {
+            selector = dbEntity => dbEntity.ID == entity.ID;
+
+            newEntity = entity;
+
+            Dictionary<uint, string> newNotes = new Dictionary<uint, string>(entity.Notes.Count);
+            int updatedCount = 0;
+            foreach (KeyValuePair<uint, string> note in entity.Notes)
+            {
+                string newNoteText = ToUtf8(note.Value);
+                newNotes.Add(note.Key, newNoteText);
+                if (!newNoteText.Equals(note.Value))
+                {
+                    log.Debug("Updating {ID}: {OldEntityValue} -> {NewEntityValue}", entity.ID, note.Value, newNoteText);
+                    updatedCount++;
+                }
+            }
+
+            if (updatedCount == 0)
+            {
+                log.Debug("Skipping: {OldEntityValue}", entity.ID);
+                return false;
+            }
+
+            newEntity.Notes.Clear();
+            foreach (KeyValuePair<uint, string> note in newNotes)
+                newEntity.Notes.Add(note.Key, note.Value);
 
             return true;
         }
