@@ -210,7 +210,7 @@ cancellationToken).ConfigureAwait(false);
             }
 
             bool plural = queue.QueuedIDs.Count > 1;
-            await _client.ReplyTextAsync(message, $"Currently there {(plural ? "are" : "is")} {queue.QueuedIDs.Count} ID{(plural ? "s" : "")} on {queueName} queue:\r\n{string.Join(", ", queue.QueuedIDs)}");
+            await _client.ReplyTextAsync(message, $"Currently there {(plural ? "are" : "is")} {queue.QueuedIDs.Count} ID{(plural ? "s" : "")} on {queue.Name} queue:\r\n{string.Join(", ", queue.QueuedIDs)}");
         }
 
         /* REMOVE */
