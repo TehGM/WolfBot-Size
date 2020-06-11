@@ -1,13 +1,16 @@
 ﻿//#define TEST_ONLY
 
+using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using TehGM.WolfBots.PicSizeCheckBot.Database.Conventions;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
 {
@@ -67,6 +70,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
 
             log.Information("Establishing database connection, DB {DatabaseName}", settings.DatabaseName);
             MongoClient client = new MongoClient(settings.ConnectionString);
+            ConventionPack conventionPack = new ConventionPack();
+            conventionPack.Add(new MapReadOnlyPropertiesConvention());
+            conventionPack.Add(new GuidAsStringRepresentationConvention());
+            ConventionRegistry.Register("Conventions", conventionPack, _ => true);
             IMongoDatabase db = client.GetDatabase(settings.DatabaseName);
 
             await MigrateEntitiesAsync<IdQueue>(db, "IdQueues", log, PerformQueueMigration);
@@ -89,7 +96,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
             IMongoCollection<T> collection = db.GetCollection<T>(collectionName);
             log.Debug("Requesting all entities from the collection");
             IEnumerable<T> allEntities = await collection.Find(_ => true).ToListAsync();
-            log.Debug("{EntityCount} entities found in {CollectionName} collection", allEntities, collectionName);
+            log.Debug("{EntityCount} entities found in {CollectionName} collection", allEntities.Count(), collectionName);
 
             ReplaceOptions options = new ReplaceOptions()
             {
