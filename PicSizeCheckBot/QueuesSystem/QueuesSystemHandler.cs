@@ -205,7 +205,7 @@ cancellationToken).ConfigureAwait(false);
 
             if (queue.QueuedIDs?.Any() != true)
             {
-                await _client.ReplyTextAsync(message, $"{queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"`{queue.Name}` queue is empty.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
