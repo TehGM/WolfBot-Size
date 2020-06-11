@@ -1,12 +1,18 @@
-﻿using Serilog;
+﻿#define TEST_ONLY
+
+using MongoDB.Driver;
+using Serilog;
 using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             ILogger log = StartLogging();
 
@@ -48,7 +54,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
                     break;
                 default:
                     {
-                        log.Error("Specify environment. Allowed environments: dev, prod");
+                        log.Error("Invalid environment. Allowed environments: dev, prod");
                         Console.ReadLine();
                         return;
                     }
@@ -57,6 +63,63 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
             log.Debug("Loading {FileName}", filename);
             Settings settings = Settings.Load(filename);
             log.Debug("Settings file loaded");
+
+            log.Information("Establishing database connection, DB {DatabaseName}", settings.DatabaseName);
+            MongoClient client = new MongoClient(settings.ConnectionString);
+            IMongoDatabase db = client.GetDatabase(settings.DatabaseName);
+
+            await MigrateEntitiesAsync<IdQueue>(db, "IdQueues", log, PerformQueueMigration);
+
+
+            log.Information("Done");
+            Console.ReadLine();
+        }
+
+        delegate bool MigrationDelegate<T>(T entity, ILogger log, out T newEntity, out Expression<Func<T, bool>> selector);
+
+        private static async Task MigrateEntitiesAsync<T>(IMongoDatabase db, string collectionName, ILogger log,
+            MigrationDelegate<T> migrationMethod)
+        {
+            Console.WriteLine();
+            log.Information("Starting {EntityType} migration", typeof(T).Name);
+            log.Debug("Opening collection {CollectionName}", collectionName);
+            IMongoCollection<T> collection = db.GetCollection<T>(collectionName);
+            log.Debug("Requesting all entities from the collection");
+            IEnumerable<T> allEntities = await collection.Find(_ => true).ToListAsync();
+            log.Debug("{EntityCount} entities found in {CollectionName} collection", allEntities, collectionName);
+
+            ReplaceOptions options = new ReplaceOptions()
+            {
+                BypassDocumentValidation = false,
+                IsUpsert = false
+            };
+            foreach (T entity in allEntities)
+            {
+                if (migrationMethod(entity, log, out T newEntity, out Expression<Func<T, bool>> selector))
+                {
+                    #if !TEST_ONLY
+                    await collection.ReplaceOneAsync(selector, newEntity, options);
+                    #endif
+                }
+            }
+        }
+
+        private static bool PerformQueueMigration(IdQueue entity, ILogger log, out IdQueue newEntity, out Expression<Func<IdQueue, bool>> selector)
+        {
+            selector = queue => queue.ID == entity.ID;
+
+            string newName = ToUtf8(entity.Name);
+            if (newName.Equals(entity.Name))
+            {
+                log.Debug("Skipping: {OldEntityValue}", entity.Name);
+                newEntity = entity;
+                return false;
+            }
+
+            log.Debug("Updating: {OldEntityValue} -> {NewEntityValue}", entity.Name, newName);
+            newEntity = entity;
+            newEntity.Name = newName;
+            return true;
         }
 
         private static ILogger StartLogging()
@@ -85,7 +148,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.EncodingMigration
             catch { }
         }
 
-        private static Encoding Win1252 = Encoding.GetEncoding("windows-1252");
+        private static Encoding Win1252 = CodePagesEncodingProvider.Instance.GetEncoding(1252);
         private static string ToUtf8(string valueWindows1252)
         {
             byte[] bytes = Win1252.GetBytes(valueWindows1252);
