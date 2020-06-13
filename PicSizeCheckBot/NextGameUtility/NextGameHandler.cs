@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,13 +22,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
         private readonly IOptionsMonitor<NextGameOptions> _nextGameOptions;
         private readonly IGroupConfigStore _groupConfigStore;
         private readonly ILogger _log;
+        private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
         private readonly Regex _nextCommandRegex = new Regex(@"^next(?:\s(\S+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private readonly Regex _nextContinueCommandRegex = new Regex(@"^next\scontinue(?:\s(\S+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private readonly Regex _nextUpdateCommandRegex = new Regex(@"^next\supdate(?:\s(\S+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        public NextGameHandler(IHostedWolfClient client, IGroupConfigStore groupConfigStore,
+        public NextGameHandler(IHostedWolfClient client, IGroupConfigStore groupConfigStore, IHostEnvironment environment,
             IOptionsMonitor<BotOptions> botOptions, IOptionsMonitor<NextGameOptions> nextGameOptions, ILogger<NextGameHandler> logger)
         {
             // store all services
@@ -36,6 +38,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             this._client = client;
             this._groupConfigStore = groupConfigStore;
             this._nextGameOptions = nextGameOptions;
+            this._environment = environment;
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
@@ -45,10 +48,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
         {
             using IDisposable logScope = message.BeginLogScope(_log);
 
+            // run only in prod, test group or owner PM
+            if (!_environment.IsProduction() &&
+                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
+                (message.IsPrivateMessage && message.RecipientID == _botOptions.CurrentValue.OwnerID)))
+                return;
+
             try
             {
                 // check if this is a correct command
-                if (!message.IsText)
+                if (!message.IsText || !message.IsGroupMessage)
                     return;
                 if (!message.TryGetCommandValue(_botOptions.CurrentValue, out string command))
                     return;
@@ -137,7 +146,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             await _client.ReplyTextAsync(message, BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions.CurrentValue, nextID), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(message.RecipientID, nextID + 1, cancellationToken).ConfigureAwait(false);
+            await SaveGroupConfigAsync(message.RecipientID, nextID, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task CmdNextAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
@@ -150,16 +159,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             await _client.ReplyTextAsync(message, BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions.CurrentValue, nextID.Value), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(message.RecipientID, nextID.Value + 1, cancellationToken).ConfigureAwait(false);
+            await SaveGroupConfigAsync(message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
         }
 
         #region Helpers
-        private async Task<bool> SaveGroupConfigAsync(uint groupID, uint nextID, CancellationToken cancellationToken = default)
+        private async Task<bool> SaveGroupConfigAsync(uint groupID, uint currentID, CancellationToken cancellationToken = default)
         {
             try
             {
                 GroupConfig groupConfig = await _groupConfigStore.GetGroupConfigAsync(groupID, cancellationToken).ConfigureAwait(false);
-                groupConfig.NextGuesswhatGameID = nextID;
+                groupConfig.CurrentGuesswhatGameID = currentID;
                 await _groupConfigStore.SetGroupConfigAsync(groupConfig, false, cancellationToken).ConfigureAwait(false);
                 return true;
             }
@@ -175,7 +184,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             if (string.IsNullOrWhiteSpace(userInput))
             {
                 GroupConfig groupConfig = await _groupConfigStore.GetGroupConfigAsync(message.RecipientID, cancellationToken).ConfigureAwait(false);
-                if (groupConfig == null || groupConfig.NextGuesswhatGameID == null)
+                if (groupConfig == null || groupConfig.CurrentGuesswhatGameID == null)
                 {
                     string prefix = _botOptions.CurrentValue.CommandPrefix;
                     await _client.ReplyTextAsync(message, "(n) I do not know the next GW game ID for this group.\r\n" +
@@ -183,7 +192,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
                     return null;
                 }
                 else
-                    return groupConfig.NextGuesswhatGameID.Value;
+                    return GetNextExistingID(groupConfig.CurrentGuesswhatGameID.Value);
             }
             if (!uint.TryParse(userInput, out uint nextID))
             {
@@ -191,6 +200,50 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
                 return null;
             }
             else return nextID;
+        }
+
+        private uint GetNextExistingID(uint currentID)
+        {
+            uint[] knownIDs = _nextGameOptions.CurrentValue.KnownGuesswhatIDs;
+
+            // if no known IDs, return +1
+            if (knownIDs == null || knownIDs.Length == 0)
+                return ++currentID;
+
+            uint start = knownIDs[0];
+            uint end = knownIDs[^1];
+
+            // if current ID is smaller than first, return first
+            if (currentID < start) return start;
+            // if current ID is first, return second
+            if (currentID == start && knownIDs.Length > 1) return knownIDs[1];
+            // if current ID is same or greater than largest known ID, return +1
+            if (currentID >= end) return ++currentID;
+
+            // perform binary search to get current ID position, or position of one smaller if it doesn't exist
+            // don't use recursion, just in case
+            int startIndex = 0;
+            int endIndex = knownIDs.Length - 1;
+            while (endIndex - startIndex > 0)
+            {
+                int middleIndex = startIndex + ((endIndex - startIndex) / 2);
+                uint middleID = knownIDs[middleIndex];
+                uint nextID = knownIDs[middleIndex + 1];
+
+                // if currentID is middle, or between middle and next, we can just return next
+                if (currentID == middleID || (currentID > middleID && currentID < nextID))
+                    return nextID;
+                // since we already know it, if current ID is next, we can return one after that
+                if (nextID == currentID)
+                    return knownIDs[middleIndex + 2];
+
+                //if not found yet, keep slashing the collection in half
+                if (currentID < middleID)
+                    endIndex = middleIndex;
+                else
+                    startIndex = middleIndex;
+            }
+            throw new KeyNotFoundException();
         }
 
         private async Task<bool> CheckUserHasAdminAsync(uint userID, uint groupID, CancellationToken cancellationToken = default)

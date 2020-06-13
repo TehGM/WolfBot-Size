@@ -27,8 +27,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         public bool IsEnabled { get; set; } = true;
 
         // data
-        /// <summary>ID of next guesswhat game in this group.</summary>
-        public uint? NextGuesswhatGameID { get; set; }
+        /// <summary>ID of current guesswhat game in this group.</summary>
+        [BsonElement("NextGuesswhatGameID")]
+        public uint? CurrentGuesswhatGameID { get; set; }
 
         [BsonConstructor(nameof(ID))]
         public GroupConfig(uint groupID)

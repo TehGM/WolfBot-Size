@@ -29,6 +29,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                 {
                     config.AddJsonFile("appsecrets.json", optional: true);
                     config.AddJsonFile($"appsecrets.{context.HostingEnvironment.EnvironmentName}.json", optional: true);
+                    config.AddJsonFile("guesswhat-ids.json", optional: true);
+                    config.AddJsonFile($"guesswhat-ids.{context.HostingEnvironment.EnvironmentName}.json", optional: true);
                 })
                 .ConfigureServices((context, services) =>
                 {

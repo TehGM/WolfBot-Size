@@ -8,5 +8,7 @@
         public string AutoPostBotAddCommand { get; set; } = "!ap add {{value}}";
 
         public int AutoPostBotWaitSeconds { get; set; } = 5;
+
+        public uint[] KnownGuesswhatIDs { get; set; }
     }
 }
