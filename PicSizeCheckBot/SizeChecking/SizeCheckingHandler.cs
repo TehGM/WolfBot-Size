@@ -68,9 +68,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         {
             using IDisposable logScope = message.BeginLogScope(_log);
 
-            // if not in production, work only in PM for testing
-            // permit working in private test group
-            if (!_environment.IsProduction() && !message.IsPrivateMessage && message.RecipientID != 2790082)
+            // run only in prod, test group or owner PM
+            if (!_environment.IsProduction() &&
+                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
+                (message.IsPrivateMessage && message.RecipientID == _botOptions.CurrentValue.OwnerID)))
                 return;
 
             CancellationToken cancellationToken = _cts?.Token ?? default;

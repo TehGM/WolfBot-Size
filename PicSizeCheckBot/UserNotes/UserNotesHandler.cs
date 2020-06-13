@@ -23,6 +23,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
         private readonly IOptionsMonitor<UserNotesOptions> _notesOptions;
         private readonly IUserDataStore _userDataStore;
         private readonly ILogger _log;
+        private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
         private readonly Regex _addCommandRegex = new Regex(@"^notes?\sadd(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -31,7 +32,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
         private readonly Regex _getCommandRegex = new Regex(@"^notes?(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private readonly Regex _helpCommandRegex = new Regex(@"^notes?\shelp", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        public UserNotesHandler(IHostedWolfClient client, IUserDataStore userDataStore,
+        public UserNotesHandler(IHostedWolfClient client, IUserDataStore userDataStore, IHostEnvironment environment,
             IOptionsMonitor<BotOptions> botOptions, IOptionsMonitor<UserNotesOptions> notesOptions, ILogger<UserNotesHandler> logger)
         {
             // store all services
@@ -40,6 +41,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
             this._notesOptions = notesOptions;
             this._client = client;
             this._userDataStore = userDataStore;
+            this._environment = environment;
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
@@ -48,6 +50,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
         private async void OnChatMessage(ChatMessage message)
         {
             using IDisposable logScope = message.BeginLogScope(_log);
+
+            // run only in prod, test group or owner PM
+            if (!_environment.IsProduction() && 
+                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
+                (message.IsPrivateMessage && message.RecipientID == _botOptions.CurrentValue.OwnerID)))
+                return;
 
             try
             {

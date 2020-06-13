@@ -25,11 +25,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private readonly IIdQueueStore _idQueueStore;
         private readonly IUserDataStore _userDataStore;
         private readonly ILogger _log;
+        private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
         private readonly Regex _queueCommandRegex = new Regex(@"^(.+)?\squeue(?:\s([A-Za-z]+))?(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        public QueuesSystemHandler(IHostedWolfClient client, IIdQueueStore idQueueStore, IUserDataStore userDataStore,
+        public QueuesSystemHandler(IHostedWolfClient client, IIdQueueStore idQueueStore, IUserDataStore userDataStore, IHostEnvironment environment,
             IOptionsMonitor<QueuesSystemOptions> queuesOptions, IOptionsMonitor<BotOptions> botOptions, ILogger<QueuesSystemHandler> logger)
         {
             // store all services
@@ -39,6 +40,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             this._client = client;
             this._idQueueStore = idQueueStore;
             this._userDataStore = userDataStore;
+            this._environment = environment;
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
@@ -47,6 +49,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private async void OnChatMessage(ChatMessage message)
         {
             using IDisposable logScope = message.BeginLogScope(_log);
+
+            // run only in prod, test group or owner PM
+            if (!_environment.IsProduction() &&
+                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
+                (message.IsPrivateMessage && message.RecipientID == _botOptions.CurrentValue.OwnerID)))
+                return;
 
             try
             {

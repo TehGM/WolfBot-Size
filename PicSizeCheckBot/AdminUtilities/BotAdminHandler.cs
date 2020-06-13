@@ -20,10 +20,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
         private readonly IOptionsMonitor<BotOptions> _botOptions;
         private readonly IUserDataStore _userDataStore;
         private readonly ILogger _log;
+        private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
 
-        public BotAdminHandler(IHostedWolfClient client, IUserDataStore userDataStore,
+        public BotAdminHandler(IHostedWolfClient client, IUserDataStore userDataStore, IHostEnvironment environment,
             IOptionsMonitor<BotOptions> botOptions, ILogger<BotAdminHandler> logger)
         {
             // store all services
@@ -31,6 +32,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
             this._botOptions = botOptions;
             this._client = client;
             this._userDataStore = userDataStore;
+            this._environment = environment;
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
@@ -39,6 +41,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
         private async void OnChatMessage(ChatMessage message)
         {
             using IDisposable logScope = message.BeginLogScope(_log);
+
+            // run only in prod, test group or owner PM
+            if (!_environment.IsProduction() &&
+                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
+                (message.IsPrivateMessage && message.RecipientID == _botOptions.CurrentValue.OwnerID)))
+                return;
 
             try
             {
