@@ -1,10 +1,10 @@
 # WOLF Pic Size Bot
 A Pic Size Bot for WOLF, designed to help checking sizes of posted images for bot content editors.
 
-Uses [Wolfringo library](https://github.com/TehGM/Wolfringo) for connection and MongoDB (using [C# MongoDB Driver](https://docs.mongodb.com/drivers/csharp) for storage.
+Uses [Wolfringo library](https://github.com/TehGM/Wolfringo) for connection and MongoDB (using [C# MongoDB Driver](https://docs.mongodb.com/drivers/csharp)) for storage.
 
 ## Features
-You can use `!size help` to get brief list of common commands. All commands with more detailed descriptions are listed on [Commands](https://github.com/TehGM/WolfBot-Size/wiki/) wiki page.
+You can use `!size help` to get brief list of common commands. All commands with more detailed descriptions are listed on [Commands](https://github.com/TehGM/WolfBot-Size/wiki/Commands) wiki page.
 
 All commands need to have a prefix (currently `!size `) when used in a group. Commands executed in a private message can skip the prefix.
 
@@ -23,7 +23,7 @@ Queues allow to store IDs in order for later in a categorized manner. You can us
 
 If you use `my` as `<QueueName>`, the bot will use a queue tied with your user ID. If you don't have a queue, bot will automatically create one using your current display name. Anyone can see and add to your queue, and you can then access it using simple `my queue` command.
 
-Queue command is relatively complex, so make sure to see [Commands](https://github.com/TehGM/WolfBot-Size/wiki/) on wiki.
+Queue command is relatively complex, so make sure to see [Commands](https://github.com/TehGM/WolfBot-Size/wiki/Commands#queues-system) on wiki.
 
 ### User Notes
 Bot can store your notes - be it set of IDs, an important reminder or your shopping list. You can see excerpts of your notes with `notes` command. Each note has an ID, and you can access full note text using `notes <ID>` command.
