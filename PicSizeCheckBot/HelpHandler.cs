@@ -48,19 +48,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
                 WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
                 await _client.ReplyTextAsync(message,
-                    string.Format(@"I will post size of images posted in this group.
-`{0}listen` - shows current listen mode. Admins can also also change mode using it's name.
-`{0}next <gameID>` - pulls next guesswhat game. <gameID> is optional.
-`{0}next continue` - checks AP bot for ID of next game.
-`{0}next update <gameID>` - updates AP bot with next game ID. <gameID> is optional.
-`{0}check <link>` - checks size of linked image.
-`{0}posturl <on/off>` - changes if I should post URL of checked image.
+                    string.Format(@"I will post size of images posted in this group. 
+I can also store your notes and ID queues.
+Last but not least, I can make pulling games one-by-one from Submission bot a lot easier!
 
-I also can store your notes. For more help, use
-`{0}notes help`
-
-For help regarding queues system, use
-`{0}queues help`
+All commands: https://github.com/TehGM/WolfBot-Size/wiki/Commands
 
 In case of any questions or suggestions, please contact {1} (ID: {2}).
 Using Wolfringo library, v0.3.1",
