@@ -4,7 +4,7 @@ A Pic Size Bot for WOLF, designed to help checking sizes of posted images for bo
 Uses [Wolfringo library](https://github.com/TehGM/Wolfringo) for connection and MongoDB (using [C# MongoDB Driver](https://docs.mongodb.com/drivers/csharp)) for storage.
 
 ## Features
-You can use `!size help` to get brief list of common commands. All commands with more detailed descriptions are listed on [Commands](https://github.com/TehGM/WolfBot-Size/wiki/Commands) wiki page.
+All commands with more detailed descriptions are listed on [Commands wiki page](https://github.com/TehGM/WolfBot-Size/wiki/Commands).
 
 All commands need to have a prefix (currently `!size `) when used in a group. Commands executed in a private message can skip the prefix.
 
