@@ -320,7 +320,7 @@ cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
-        /* ASSIGN */
+        /* TRANSFER */
         private async Task CmdTransferAsync(ChatMessage message, string queueName, string args, CancellationToken cancellationToken = default)
         {
             IdQueue queue = await GetOrCreateQueueAsync(message, queueName, cancellationToken).ConfigureAwait(false);
@@ -344,6 +344,13 @@ cancellationToken).ConfigureAwait(false);
             if (user == null)
             {
                 await _client.ReplyTextAsync(message, $"(n) User {args} not found.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            IdQueue userCurrentQueue = await _idQueueStore.GetIdQueueByOwnerAsync(user.ID, cancellationToken).ConfigureAwait(false);
+            if (userCurrentQueue != null)
+            {
+                await _client.ReplyTextAsync(message, $"(n) User {user.Name} already owns a queue. One user can only own one queue.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
