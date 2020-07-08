@@ -1,11 +1,11 @@
 ﻿using Serilog.Events;
 using Serilog.Sinks.Datadog.Logs;
 
-namespace TehGM.WolfBots.PicSizeCheckBot.Options
+namespace TehGM.WolfBots.Options
 {
     public class DatadogOptions
     {
-        public string ServiceName { get; set; } = "Wolf Bots - Size";
+        public string ServiceName { get; set; }
         public string AssemblyName { get; set; }
         public string EnvironmentName { get; set; }
         public string HostName { get; set; }
