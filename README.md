@@ -30,7 +30,12 @@ Bot can store your notes - be it set of IDs, an important reminder or your shopp
 
 To add to your notes, simply use `notes add <Text>`, and to remove use `notes remove <ID>`, or to remove all use `notes clear`.
 
-Due to WOLF protocol limitations, notes cannot be very long
+Due to WOLF protocol limitations, notes cannot be very long.
+
+### Mentions
+The bot can message a user whenever their name is mentioned in a group chat. This feature uses regular expressions, which gives huge flexibility when setting triggers.
+
+Each user can have more than one trigger messaging them.
 
 ## Development
 This bot is under continuous (if sometimes slow) development. Breaking changes might be introduced at any time.
