@@ -63,7 +63,7 @@ For help regarding queues system, use
 `{0}queues help`
 
 In case of any questions or suggestions, please contact {1} (ID: {2}).
-Using Wolfringo library, v0.3.1-rc3",
+Using Wolfringo library, v0.3.1",
 _botOptions.CurrentValue.CommandPrefix, owner.Nickname, owner.ID.ToString()),
                     cancellationToken).ConfigureAwait(false);
             }
