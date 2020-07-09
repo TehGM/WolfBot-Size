@@ -73,9 +73,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
         private static void ConfigureSerilog(HostBuilderContext context, LoggerConfiguration config)
         {
-            DatadogOptions ddOptions = context.Configuration.GetSection("Serilog").GetSection("DataDog").Get<DatadogOptions>();
-            config.ReadFrom.Configuration(context.Configuration)
-                .WriteTo.DatadogLogs(
+            config.ReadFrom.Configuration(context.Configuration);
+            DatadogOptions ddOptions = context.Configuration.GetSection("Serilog")?.GetSection("DataDog")?.Get<DatadogOptions>();
+            if (ddOptions != null)
+            {
+                config.WriteTo.DatadogLogs(
                     ddOptions.ApiKey,
                     source: ".NET",
                     service: ddOptions.ServiceName ?? "WolfBots-Size",
@@ -88,6 +90,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     // no need for debug logs in datadag
                     logLevel: ddOptions.OverrideLogLevel ?? LogEventLevel.Verbose
                 );
+            }
         }
 
         private static void EnableUnhandledExceptionLogging()

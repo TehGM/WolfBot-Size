@@ -4,38 +4,28 @@ A Pic Size Bot for WOLF, designed to help checking sizes of posted images for bo
 Uses [Wolfringo library](https://github.com/TehGM/Wolfringo) for connection and MongoDB (using [C# MongoDB Driver](https://docs.mongodb.com/drivers/csharp)) for storage.
 
 ## Features
+View bot features information on [Wiki page](https://github.com/TehGM/WolfBot-Size/wiki#features).
+
 All commands with more detailed descriptions are listed on [Commands wiki page](https://github.com/TehGM/WolfBot-Size/wiki/Commands).
 
 All commands need to have a prefix (currently `!size `) when used in a group. Commands executed in a private message can skip the prefix.
 
-### Size checking
-The core feature of the bot. The bot will automatically post sizes of posted images. The bot can also check size of image from URL, using `check <url>` command.
+## Running locally
+1. Clone this repository to get all files.
+2. Set up MongoDB database with following collections: `GroupConfigs`, `IdQueues`, `Mentions` and `UsersData`.
+3. Create `appsecrets.json` file. See [example file](PicSizeCheckBot/appsecrets-example.json) for example structure.  
+This file will hold secrets, so it should not be included in source control repository. `.gitignore` file included with this repo will ignore `appsecrets.json` and `appsecrets.*.json` files.
+4. Populate secrets file with bot login credentials and MongoDB connection string for your DB.
+5. *(optional)* If using DataDog for logs, create a following section in `appsecrets.json`, replacying `<api-key>` with your DataDog application API key:  
+```json
+"Serilog": {
+  "DataDog": {
+    "ApiKey": "<api-key>"
+  }
+}
+```
+6. Build and run `PicSizeCheckBot` project.
 
-The size checking settings can be changed using `listen`, `posturl` and `enable`/`disable` commands.
-
-### Next ID
-The bot makes it easier to pull next game ID with `next` command. `next continue` and `next update` commands also help with storing the last ID in Autopost bot.
-
-The bot automatically uses [known IDs list](PicSizeCheckBot/guesswhat-ids.json) to skip IDs that do not exist. If using `next` command with IDs that are greater than last entry on the list, bot will pull IDs one by one.
-
-### Queues System
-Queues allow to store IDs in order for later in a categorized manner. You can use queues using `<QueueName> queue` commands.
-
-If you use `my` as `<QueueName>`, the bot will use a queue tied with your user ID. If you don't have a queue, bot will automatically create one using your current display name. Anyone can see and add to your queue, and you can then access it using simple `my queue` command.
-
-Queue command is relatively complex, so make sure to see [Commands](https://github.com/TehGM/WolfBot-Size/wiki/Commands#queues-system) on wiki.
-
-### User Notes
-Bot can store your notes - be it set of IDs, an important reminder or your shopping list. You can see excerpts of your notes with `notes` command. Each note has an ID, and you can access full note text using `notes <ID>` command.
-
-To add to your notes, simply use `notes add <Text>`, and to remove use `notes remove <ID>`, or to remove all use `notes clear`.
-
-Due to WOLF protocol limitations, notes cannot be very long.
-
-### Mentions
-The bot can message a user whenever their name is mentioned in a group chat. This feature uses regular expressions, which gives huge flexibility when setting triggers.
-
-Each user can have more than one trigger messaging them.
 
 ## Development
 This bot is under continuous (if sometimes slow) development. Breaking changes might be introduced at any time.
