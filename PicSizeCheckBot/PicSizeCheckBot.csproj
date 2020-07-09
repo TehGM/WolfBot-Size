@@ -17,12 +17,12 @@
 
   <ItemGroup>
     <Content Include="appsecrets-example.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsecrets.Development.json" Condition="Exists('appsecrets.Development.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="appsecrets.Development.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsecrets.json">
+    <Content Include="appsecrets.json" Condition="Exists('appsecrets.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="appsettings.Development.json">
