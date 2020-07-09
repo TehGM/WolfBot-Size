@@ -16,13 +16,11 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.101
-    - name: Setup Nuget Sources
+    - name: Setup Nuget - GitHub Packages
       uses: nuget/setup-nuget@v1.0.2
       with:
-        dotnet-version: '3.1.x'
-        source-url: https://nuget.pkg.github.com/TehGM/index.json
-      env:
-        NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        nuget-api-key-source: https://nuget.pkg.github.com/TehGM/index.json
+        nuget-api-key: ${{secrets.GITHUB_TOKEN}}
     - name: Install dependencies
       run: dotnet restore
     - name: Build
