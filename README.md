@@ -1,5 +1,5 @@
 # WOLF Pic Size Bot
-![GitHub top language](https://img.shields.io/github/languages/top/TehGM/WolfBot-Size) ![GitHub](https://img.shields.io/github/license/TehGM/WolfBot-Size) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TehGM/WolfBot-Size/.NET%20Core%20Build) ![GitHub issues](https://img.shields.io/github/issues/TehGM/WolfBot-Size)
+[![GitHub top language](https://img.shields.io/github/languages/top/TehGM/WolfBot-Size)](/) [![GitHub](https://img.shields.io/github/license/TehGM/WolfBot-Size)](LICENSE) [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/TehGM/WolfBot-Size/.NET%20Core%20Build)](https://github.com/TehGM/WolfBot-Size/actions) [![GitHub issues](https://img.shields.io/github/issues/TehGM/WolfBot-Size)](https://github.com/TehGM/WolfBot-Size/issues)
 
 A Pic Size Bot for WOLF, designed to help checking sizes of posted images for bot content editors.
 
