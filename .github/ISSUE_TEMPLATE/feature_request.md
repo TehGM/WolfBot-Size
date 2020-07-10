@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
+about: Suggest a new feature idea for the bot
 title: ''
 labels: enhancement
 assignees: ''
