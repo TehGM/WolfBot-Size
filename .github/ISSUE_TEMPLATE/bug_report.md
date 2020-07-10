@@ -7,14 +7,14 @@ assignees: TehGM
 
 ---
 
-**Describe the bug**
--- A clear and concise description of what the bug is. --
+### Bug description
+A clear and concise description of what the bug is.
 
-**Current behaviour**
--- A clear and concise description of what you is happening currently. --
+### Current behaviour
+A clear and concise description of what you is happening currently.
 
-**Expected behavior**
--- A clear and concise description of what you expected to happen. --
+### Expected behavior
+A clear and concise description of what you expected to happen.
 
-**Additional info**
+### Additional info
 Add any other context about the problem here.
