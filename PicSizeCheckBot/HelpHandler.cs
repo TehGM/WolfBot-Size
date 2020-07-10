@@ -52,7 +52,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 I can also store your notes and ID queues.
 Last but not least, I can make pulling games one-by-one from Submission bot a lot easier!
 
-All commands: https://github.com/TehGM/WolfBot-Size/wiki/Commands
+Bot features and commands: https://github.com/TehGM/WolfBot-Size/wiki
 
 In case of any questions or suggestions, please contact {1} (ID: {2}).
 Using Wolfringo library, v0.3.1",
