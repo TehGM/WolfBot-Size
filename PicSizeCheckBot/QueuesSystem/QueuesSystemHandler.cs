@@ -350,12 +350,12 @@ cancellationToken).ConfigureAwait(false);
             IdQueue userCurrentQueue = await _idQueueStore.GetIdQueueByOwnerAsync(user.ID, cancellationToken).ConfigureAwait(false);
             if (userCurrentQueue != null)
             {
-                await _client.ReplyTextAsync(message, $"(n) User {user.Name} already owns a queue. One user can only own one queue.", cancellationToken).ConfigureAwait(false);
+                await _client.ReplyTextAsync(message, $"(n) User {user.Nickname} already owns a queue. One user can only own one queue.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             queue.OwnerID = user.ID;
-            await _client.ReplyTextAsync(message, $"(y) Queue `{queue.Name}` transferred to {user.Name}.", cancellationToken).ConfigureAwait(false);
+            await _client.ReplyTextAsync(message, $"(y) Queue `{queue.Name}` transferred to {user.Nickname}.", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
         }
 
