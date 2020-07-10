@@ -316,8 +316,9 @@ cancellationToken).ConfigureAwait(false);
             }
 
             queue.Name = newName;
-            await _client.ReplyTextAsync(message, $"(y) Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
+            _idQueueStore.FlushBatch();
+            await _client.ReplyTextAsync(message, $"(y) Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
         }
 
         /* TRANSFER */
@@ -355,8 +356,9 @@ cancellationToken).ConfigureAwait(false);
             }
 
             queue.OwnerID = user.ID;
-            await _client.ReplyTextAsync(message, $"(y) Queue `{queue.Name}` transferred to {user.Nickname}.", cancellationToken).ConfigureAwait(false);
             await SaveQueueAsync(message, queue, cancellationToken).ConfigureAwait(false);
+            _idQueueStore.FlushBatch();
+            await _client.ReplyTextAsync(message, $"(y) Queue `{queue.Name}` transferred to {user.Nickname}.", cancellationToken).ConfigureAwait(false);
         }
 
         /* INFO */
