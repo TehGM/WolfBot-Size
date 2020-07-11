@@ -13,7 +13,7 @@ A clear and concise description of what the bug is.
 ### Current behaviour
 A clear and concise description of what you is happening currently.
 
-### Expected behavior
+### Expected behaviour
 A clear and concise description of what you expected to happen.
 
 ### Additional info
