@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a bug report to help with fixing bot issues
 title: ''
-labels: bug
+labels: ''
 assignees: TehGM
 
 ---
