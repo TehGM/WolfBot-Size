@@ -30,9 +30,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         private readonly ILogger _log;
 
         private Regex _urlMatchingRegex;
-        private static Regex _listenCommandRegex = new Regex(@"^listen(?:\s(\S*))?(?:\s(\S*)\b)?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private static Regex _postUrlCommandRegex = new Regex(@"^posturl(?:\s(\S*)\b)?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private static Regex _enableDisableCommandRegex = new Regex(@"^(enable|disable)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private static Regex _listenCommandRegex = new Regex(@"^listen(?:\s(\S*))?(?:\s(\S*)\b)?", BotCommandUtilities.DefaultRegexOptions);
+        private static Regex _postUrlCommandRegex = new Regex(@"^posturl(?:\s(\S*)\b)?", BotCommandUtilities.DefaultRegexOptions);
+        private static Regex _enableDisableCommandRegex = new Regex(@"^(enable|disable)\b", BotCommandUtilities.DefaultRegexOptions);
 
         private CancellationTokenSource _cts;
 

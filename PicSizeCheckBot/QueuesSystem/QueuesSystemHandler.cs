@@ -28,7 +28,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
-        private readonly Regex _queueCommandRegex = new Regex(@"^(.+)?\squeue(?:\s([A-Za-z]+))?(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private readonly Regex _queueCommandRegex = new Regex(@"^(.+)?\squeue(?:\s([A-Za-z]+))?(?:\s(.+))?", BotCommandUtilities.DefaultRegexOptions);
 
         public QueuesSystemHandler(IHostedWolfClient client, IIdQueueStore idQueueStore, IUserDataStore userDataStore, IHostEnvironment environment,
             IOptionsMonitor<QueuesSystemOptions> queuesOptions, IOptionsMonitor<BotOptions> botOptions, ILogger<QueuesSystemHandler> logger)

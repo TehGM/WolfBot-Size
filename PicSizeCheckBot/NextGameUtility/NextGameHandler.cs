@@ -25,9 +25,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
         private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
-        private readonly Regex _nextCommandRegex = new Regex(@"^next(?:\s(\S+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private readonly Regex _nextContinueCommandRegex = new Regex(@"^next\scontinue(?:\s(\S+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private readonly Regex _nextUpdateCommandRegex = new Regex(@"^next\supdate(?:\s(\S+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private readonly Regex _nextCommandRegex = new Regex(@"^next(?:\s(\S+))?", BotCommandUtilities.DefaultRegexOptions);
+        private readonly Regex _nextContinueCommandRegex = new Regex(@"^next\scontinue(?:\s(\S+))?", BotCommandUtilities.DefaultRegexOptions);
+        private readonly Regex _nextUpdateCommandRegex = new Regex(@"^next\supdate(?:\s(\S+))?", BotCommandUtilities.DefaultRegexOptions);
 
         public NextGameHandler(IHostedWolfClient client, IGroupConfigStore groupConfigStore, IHostEnvironment environment,
             IOptionsMonitor<BotOptions> botOptions, IOptionsMonitor<NextGameOptions> nextGameOptions, ILogger<NextGameHandler> logger)

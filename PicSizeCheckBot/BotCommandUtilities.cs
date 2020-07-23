@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo.Messages;
 
@@ -6,6 +7,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 {
     public static class BotCommandUtilities
     {
+        public const RegexOptions DefaultRegexOptions = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline;
+
         public static bool TryGetCommandValue(this ChatMessage message, BotOptions options, out string commandValue)
             => TryGetCommandValue(message, options.CommandPrefix, options.RequirePrefixInPrivate, out commandValue);
 
