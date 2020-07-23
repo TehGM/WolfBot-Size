@@ -329,7 +329,7 @@ cancellationToken).ConfigureAwait(false);
                 return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue, or user is bot admin
-            if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
+            if (queue.OwnerID != null && !await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
                 await _client.ReplyTextAsync(message, "(n) To transfer a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                 return;
