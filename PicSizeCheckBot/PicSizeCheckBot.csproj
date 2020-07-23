@@ -4,6 +4,9 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>TehGM.WolfBots.PicSizeCheckBot</RootNamespace>
+    <AssemblyVersion>2.0.4</AssemblyVersion>
+    <FileVersion>2.0.4</FileVersion>
+    <Version>2.0.4-preview1</Version>
   </PropertyGroup>
 
   <ItemGroup>

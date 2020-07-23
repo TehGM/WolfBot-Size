@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
@@ -45,22 +47,35 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     return;
 
                 CancellationToken cancellationToken = _cts?.Token ?? default;
+                
 
                 WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
-                await _client.ReplyTextAsync(message,
-                    string.Format(@"I will post size of images posted in this group. 
+                await _client.ReplyTextAsync(message, 
+@$"I will post size of images posted in this group. 
 I can also store your notes and ID queues.
 Last but not least, I can make pulling games one-by-one from Submission bot a lot easier!
 
 Bot features and commands: https://github.com/TehGM/WolfBot-Size/wiki
 
-In case of any questions or suggestions, please contact {1} (ID: {2}).
-Using Wolfringo library, v0.3.1",
-_botOptions.CurrentValue.CommandPrefix, owner.Nickname, owner.ID.ToString()),
-                    cancellationToken).ConfigureAwait(false);
+In case of any questions, suggestions or bugs, please submit an issue: https://github.com/TehGM/WolfBot-Size/issues.
+
+Using Wolfringo library v0.3.1
+Bot version: v{GetVersion()}", 
+cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
+        }
+
+        private static string GetVersion()
+        {
+            FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(typeof(HelpHandler).Assembly.Location);
+            if (!string.IsNullOrWhiteSpace(versionInfo.ProductVersion))
+                return versionInfo.ProductVersion;
+            string result = $"{versionInfo.FileMajorPart}.{versionInfo.FileMinorPart}.{versionInfo.FileBuildPart}";
+            if (versionInfo.FilePrivatePart != 0)
+                result += $".{versionInfo.FilePrivatePart}";
+            return result;
         }
 
         // Implementing IHostedService ensures this class is created on start
