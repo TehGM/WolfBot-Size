@@ -28,7 +28,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
-        private readonly Regex _queueCommandRegex = new Regex(@"^(.+)?\squeue(?:\s([A-Za-z]+))?(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private readonly Regex _queueCommandRegex = new Regex(@"^(.+)?\squeue(?:\s([A-Za-z]+))?(?:\s(.+))?", BotCommandUtilities.DefaultRegexOptions);
 
         public QueuesSystemHandler(IHostedWolfClient client, IIdQueueStore idQueueStore, IUserDataStore userDataStore, IHostEnvironment environment,
             IOptionsMonitor<QueuesSystemOptions> queuesOptions, IOptionsMonitor<BotOptions> botOptions, ILogger<QueuesSystemHandler> logger)
@@ -329,7 +329,7 @@ cancellationToken).ConfigureAwait(false);
                 return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue, or user is bot admin
-            if (!await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
+            if (queue.OwnerID != null && !await IsQueueOwnerOrBotAdmin(queue, message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
                 await _client.ReplyTextAsync(message, "(n) To transfer a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                 return;
