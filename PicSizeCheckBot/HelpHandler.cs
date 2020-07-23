@@ -57,10 +57,11 @@ Last but not least, I can make pulling games one-by-one from Submission bot a lo
 
 Bot features and commands: https://github.com/TehGM/WolfBot-Size/wiki
 
-In case of any questions, suggestions or bugs, please submit an issue: https://github.com/TehGM/WolfBot-Size/issues.
+Questions, suggestions or bugs reports: https://github.com/TehGM/WolfBot-Size/issues.
 
 Using Wolfringo library v0.3.1
-Bot version: v{GetVersion()}", 
+Bot version: v{GetVersion()}
+Copyright (c) 2020 TehGM",  // due to AGPL licensing, this line cannot be changed or removed, unless by the original author
 cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
