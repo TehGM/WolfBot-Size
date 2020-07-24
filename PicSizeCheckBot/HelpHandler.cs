@@ -48,8 +48,6 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
                 CancellationToken cancellationToken = _cts?.Token ?? default;
                 
-
-                WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
                 await _client.ReplyTextAsync(message, 
 @$"I will post size of images posted in this group. 
 I can also store your notes and ID queues.
