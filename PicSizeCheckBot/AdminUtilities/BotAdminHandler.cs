@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
@@ -23,6 +24,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
         private readonly IHostEnvironment _environment;
 
         private CancellationTokenSource _cts;
+        private readonly List<ChatMessage> _reconnectRequests;
+        private bool _reconnecting = false;
 
         public BotAdminHandler(IHostedWolfClient client, IUserDataStore userDataStore, IHostEnvironment environment,
             IOptionsMonitor<BotOptions> botOptions, ILogger<BotAdminHandler> logger)
@@ -36,6 +39,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
             // add client listeners
             this._client.AddMessageListener<ChatMessage>(OnChatMessage);
+            this._client.AddMessageListener<WelcomeEvent>(OnLoggedIn);
+
+            // init relog requests track
+            _reconnectRequests = new List<ChatMessage>(1);
         }
 
         private async void OnChatMessage(ChatMessage message)
@@ -61,6 +68,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                     await CmdJoinAsync(message, command, cancellationToken).ConfigureAwait(false);
                 else if (command.StartsWith("leave", StringComparison.OrdinalIgnoreCase))
                     await CmdLeaveAsync(message, command, cancellationToken).ConfigureAwait(false);
+                else if (command.StartsWith("reconnect", StringComparison.OrdinalIgnoreCase))
+                    await CmdReconnectAsync(message, command, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
             catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendToGroup) { }
@@ -146,6 +155,38 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                         cancellationToken).ConfigureAwait(false);
                 else
                     throw;
+            }
+        }
+
+        private async Task CmdReconnectAsync(ChatMessage message, string command, CancellationToken cancellationToken = default)
+        {
+            if (_reconnecting)
+                return;
+            if (!await CheckIfAdminAsync(message, cancellationToken).ConfigureAwait(false))
+                return;
+
+            await _client.ReplyTextAsync(message, "/me I am now going to reconnect, hang on.", cancellationToken).ConfigureAwait(false);
+            _reconnecting = true;
+            _reconnectRequests.Add(message);
+            await _client.DisconnectAsync(cancellationToken).ConfigureAwait(false);
+            await Task.Delay(200, cancellationToken).ConfigureAwait(false);
+            await _client.ConnectAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        private async void OnLoggedIn(WelcomeEvent message)
+        {
+            try
+            {
+                if (!_reconnecting || !_reconnectRequests.Any())
+                    return;
+
+                for (int i = 0; i < _reconnectRequests.Count; i++)
+                    await _client.ReplyTextAsync(_reconnectRequests[i], "/me I am back online.", _cts?.Token ?? default).ConfigureAwait(false);
+            }
+            finally
+            {
+                _reconnectRequests.Clear();
+                _reconnecting = false;
             }
         }
 

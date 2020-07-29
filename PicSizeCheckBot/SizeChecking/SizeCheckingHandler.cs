@@ -211,6 +211,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 
             // check user is admin or owner
             WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
+            if (member == null)
+            {
+                await _client.SendGroupMembersBugNoticeAsync(message, cancellationToken).ConfigureAwait(false);
+                return;
+            }
             if (member?.HasAdminPrivileges != true)
             {
                 await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
@@ -241,6 +246,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             if (message.IsGroupMessage)
             {
                 WolfGroupMember member = await GetGroupMemberAsync(message, cancellationToken).ConfigureAwait(false);
+                if (member == null)
+                {
+                    await _client.SendGroupMembersBugNoticeAsync(message, cancellationToken).ConfigureAwait(false);
+                    return;
+                }
                 if (member?.HasAdminPrivileges != true)
                 {
                     await _client.ReplyTextAsync(message, "/alert You need at least admin permissions to change group config.", cancellationToken).ConfigureAwait(false);
@@ -404,7 +414,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         private async Task<WolfGroupMember> GetGroupMemberAsync(ChatMessage message, CancellationToken cancellationToken = default)
         {
             WolfGroup group = await _client.GetGroupAsync(message.RecipientID, cancellationToken).ConfigureAwait(false);
-            return group?.Members[message.SenderID.Value];
+            if (group == null)
+                return null;
+            if (group.Members.TryGetValue(message.SenderID.Value, out WolfGroupMember result))
+                return result;
+            else return null;
         }
 
 

@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
@@ -48,8 +47,6 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
                 CancellationToken cancellationToken = _cts?.Token ?? default;
                 
-
-                WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
                 await _client.ReplyTextAsync(message, 
 @$"I will post size of images posted in this group. 
 I can also store your notes and ID queues.
@@ -57,10 +54,12 @@ Last but not least, I can make pulling games one-by-one from Submission bot a lo
 
 Bot features and commands: https://github.com/TehGM/WolfBot-Size/wiki
 
-In case of any questions, suggestions or bugs, please submit an issue: https://github.com/TehGM/WolfBot-Size/issues.
+Questions, suggestions or bugs reports: https://github.com/TehGM/WolfBot-Size/issues.
+Sponsor my work: https://github.com/sponsors/TehGM
 
 Using Wolfringo library v0.3.1
-Bot version: v{GetVersion()}", 
+Bot version: v{GetVersion()}
+Copyright © 2020 TehGM",  // due to AGPL licensing, this line cannot be changed or removed, unless by the original author
 cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
