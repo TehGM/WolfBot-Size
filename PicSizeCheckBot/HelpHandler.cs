@@ -59,7 +59,7 @@ Sponsor my work: https://github.com/sponsors/TehGM
 
 Using Wolfringo library v0.3.1
 Bot version: v{GetVersion()}
-Copyright (c) 2020 TehGM",  // due to AGPL licensing, this line cannot be changed or removed, unless by the original author
+Copyright © 2020 TehGM",  // due to AGPL licensing, this line cannot be changed or removed, unless by the original author
 cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) { }
