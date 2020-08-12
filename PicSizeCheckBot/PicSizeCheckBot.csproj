@@ -10,7 +10,7 @@
     <Authors>TehGM</Authors>
     <Company>TehGM</Company>
     <Product>WolfBot-Size</Product>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/TehGM/WolfBot-Size</PackageProjectUrl>
     <RepositoryUrl>https://github.com/TehGM/WolfBot-Size</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
