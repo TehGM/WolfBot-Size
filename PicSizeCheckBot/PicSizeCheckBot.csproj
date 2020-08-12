@@ -4,9 +4,19 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>TehGM.WolfBots.PicSizeCheckBot</RootNamespace>
-    <AssemblyVersion>2.0.4</AssemblyVersion>
+    <AssemblyVersion>2.0.5</AssemblyVersion>
     <FileVersion>2.0.4</FileVersion>
     <Version>2.0.5</Version>
+    <Authors>TehGM</Authors>
+    <Company>TehGM</Company>
+    <Product>WolfBot-Size</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/TehGM/WolfBot-Size</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/TehGM/WolfBot-Size</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>wolf wolfringo palringo bot</PackageTags>
+    <Copyright>Copyright (c) 2020 TehGM</Copyright>
+    <PackageId>TehGM.WolfBots.PicSizeCheckBot</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
