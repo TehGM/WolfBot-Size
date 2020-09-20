@@ -53,7 +53,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
             // run only in prod, test group or owner PM
             if (!_environment.IsProduction() &&
                 !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
-                (message.IsPrivateMessage && message.RecipientID == _botOptions.CurrentValue.OwnerID)))
+                (message.IsPrivateMessage && message.SenderID == _botOptions.CurrentValue.OwnerID)))
                 return;
 
             try

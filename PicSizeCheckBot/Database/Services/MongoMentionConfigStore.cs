@@ -20,7 +20,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Database.Services
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
         public MongoMentionConfigStore(IMongoConnection databaseConnection, IOptionsMonitor<DatabaseOptions> databaseOptions, 
-            ILogger<MongoGroupConfigStore> logger, IMentionConfigCache cache)
+            ILogger<MongoMentionConfigStore> logger, IMentionConfigCache cache)
             : base(databaseConnection, databaseOptions)
         {
             this._log = logger;

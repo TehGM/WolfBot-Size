@@ -1,12 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>TehGM.WolfBots.PicSizeCheckBot</RootNamespace>
-    <AssemblyVersion>2.0.4</AssemblyVersion>
+    <AssemblyVersion>2.0.5</AssemblyVersion>
     <FileVersion>2.0.4</FileVersion>
-    <Version>2.0.5</Version>
+    <Version>2.0.6-rc1</Version>
+    <Authors>TehGM</Authors>
+    <Company>TehGM</Company>
+    <Product>WolfBot-Size</Product>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/TehGM/WolfBot-Size</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/TehGM/WolfBot-Size</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>wolf wolfringo palringo bot</PackageTags>
+    <Copyright>Copyright (c) 2020 TehGM</Copyright>
+    <PackageId>TehGM.WolfBots.PicSizeCheckBot</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,13 +50,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
-    <PackageReference Include="MongoDB.Driver" Version="2.10.4" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.8" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.8" />
+    <PackageReference Include="MongoDB.Driver" Version="2.11.2" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Serilog" Version="2.9.0" />
+    <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
@@ -55,8 +65,8 @@
     <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.3.2" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
-    <PackageReference Include="Wolfringo" Version="0.3.1" />
-    <PackageReference Include="Wolfringo.Hosting" Version="0.3.1" />
+    <PackageReference Include="Wolfringo" Version="0.4.0" />
+    <PackageReference Include="Wolfringo.Hosting" Version="0.4.0" />
   </ItemGroup>
 
 </Project>

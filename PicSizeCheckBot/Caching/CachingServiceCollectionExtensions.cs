@@ -16,6 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IIdQueueCache, IdQueueCache>();
             services.TryAddSingleton<IUserDataCache, UserDataCache>();
             services.TryAddSingleton<IGroupConfigCache, GroupConfigCache>();
+            services.TryAddSingleton<IMentionConfigCache, MentionConfigCache>();
             services.AddHostedService<CacheCleaner>();
 
             if (configurationSection != null)
