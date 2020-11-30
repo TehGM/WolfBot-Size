@@ -21,7 +21,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IUserDataCache, UserDataCache>();
             services.TryAddSingleton<IGroupConfigStore, MongoGroupConfigStore>();
             services.TryAddSingleton<IGroupConfigCache, GroupConfigCache>();
-            services.AddHostedService<SizeCheckingHandler>();
 
             if (configurationSection != null)
                 services.Configure<SizeCheckingOptions>(configurationSection);

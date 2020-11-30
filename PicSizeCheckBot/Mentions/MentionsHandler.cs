@@ -10,15 +10,15 @@ using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
-using TehGM.Wolfringo.Hosting;
 using TehGM.Wolfringo.Messages;
 using TehGM.Wolfringo.Messages.Responses;
+using TehGM.Wolfringo.Utilities;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
 {
     public class MentionsHandler : IHostedService, IDisposable
     {
-        private readonly IHostedWolfClient _client;
+        private readonly IWolfClient _client;
         private readonly IOptionsMonitor<MentionsOptions> _mentionsOptions;
         private readonly IOptionsMonitor<BotOptions> _botOptions;
         private readonly IMentionConfigStore _mentionConfigStore;
@@ -27,8 +27,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
 
         private CancellationTokenSource _cts;
 
-        public MentionsHandler(IHostedWolfClient client, IMentionConfigStore mentionConfigStore, IOptionsMonitor<BotOptions> botOptions,
-            IOptionsMonitor<MentionsOptions> mentionsOptions, ILogger<MentionsHandler> logger, IHostEnvironment environment)
+        public MentionsHandler(IWolfClient client, IMentionConfigStore mentionConfigStore, IOptionsMonitor<BotOptions> botOptions, IOptionsMonitor<MentionsOptions> mentionsOptions, ILogger<MentionsHandler> logger, IHostEnvironment environment)
         {
             // store all services
             this._log = logger;
@@ -122,9 +121,8 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
         public void Dispose()
         {
             this._client?.RemoveMessageListener<ChatMessage>(OnChatMessage);
-            this._cts?.Cancel();
-            this._cts?.Dispose();
-            this._cts = null;
+            try { this._cts?.Cancel(); } catch { }
+            try { this._cts?.Dispose(); } catch { }
         }
     }
 }

@@ -20,7 +20,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IMongoConnection, MongoConnection>();
             services.TryAddSingleton<IUserDataStore, MongoUserDataStore>();
             services.TryAddSingleton<IUserDataCache, UserDataCache>();
-            services.AddHostedService<UserNotesHandler>();
 
             if (configurationSection != null)
                 services.Configure<UserNotesOptions>(configurationSection);

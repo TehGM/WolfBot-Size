@@ -1,95 +1,43 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
-using TehGM.Wolfringo.Hosting;
-using TehGM.Wolfringo.Messages;
-using TehGM.Wolfringo.Messages.Responses;
+using TehGM.Wolfringo.Commands;
+using TehGM.Wolfringo.Utilities;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
 {
-    public class UserNotesHandler : IHostedService, IDisposable
+    [CommandsHandler]
+    public class UserNotesHandler
     {
-        private readonly IHostedWolfClient _client;
-        private readonly IOptionsMonitor<BotOptions> _botOptions;
-        private readonly IOptionsMonitor<UserNotesOptions> _notesOptions;
+        private readonly BotOptions _botOptions;
+        private readonly UserNotesOptions _notesOptions;
         private readonly IUserDataStore _userDataStore;
         private readonly ILogger _log;
-        private readonly IHostEnvironment _environment;
 
-        private CancellationTokenSource _cts;
-        private readonly Regex _addCommandRegex = new Regex(@"^notes?\sadd(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private readonly Regex _removeCommandRegex = new Regex(@"^notes?\s(?:del|delete|remove)(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private readonly Regex _clearCommandRegex = new Regex(@"^notes?\sclear", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private readonly Regex _getCommandRegex = new Regex(@"^notes?(?:\s(.+))?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private readonly Regex _helpCommandRegex = new Regex(@"^notes?\shelp", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-        public UserNotesHandler(IHostedWolfClient client, IUserDataStore userDataStore, IHostEnvironment environment,
-            IOptionsMonitor<BotOptions> botOptions, IOptionsMonitor<UserNotesOptions> notesOptions, ILogger<UserNotesHandler> logger)
+        public UserNotesHandler(IUserDataStore userDataStore, IOptionsSnapshot<BotOptions> botOptions, IOptionsSnapshot<UserNotesOptions> notesOptions, ILogger<UserNotesHandler> logger)
         {
             // store all services
             this._log = logger;
-            this._botOptions = botOptions;
-            this._notesOptions = notesOptions;
-            this._client = client;
+            this._botOptions = botOptions.Value;
+            this._notesOptions = notesOptions.Value;
             this._userDataStore = userDataStore;
-            this._environment = environment;
-
-            // add client listeners
-            this._client.AddMessageListener<ChatMessage>(OnChatMessage);
         }
 
-        private async void OnChatMessage(ChatMessage message)
-        {
-            using IDisposable logScope = message.BeginLogScope(_log);
-
-            // run only in prod, test group or owner PM
-            if (!_environment.IsProduction() && 
-                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
-                (message.IsPrivateMessage && message.RecipientID == _botOptions.CurrentValue.OwnerID)))
-                return;
-
-            try
-            {
-                // check if this is a correct command
-                if (!message.IsText)
-                    return;
-                if (!message.TryGetCommandValue(_botOptions.CurrentValue, out string command))
-                    return;
-
-                CancellationToken cancellationToken = _cts?.Token ?? default;
-
-                if (_helpCommandRegex.TryGetMatch(command, out _))
-                    await CmdHelpAsync(message, cancellationToken).ConfigureAwait(false);
-                else if (_clearCommandRegex.TryGetMatch(command, out _))
-                    await CmdClearAsync(message, cancellationToken).ConfigureAwait(false);
-                else if (_addCommandRegex.TryGetMatch(command, out Match addMatch))
-                    await CmdAddAsync(message, addMatch.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
-                else if (_removeCommandRegex.TryGetMatch(command, out Match removeMatch))
-                    await CmdRemoveAsync(message, removeMatch.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
-                // get should come last!!
-                else if (_getCommandRegex.TryGetMatch(command, out Match getMatach))
-                    await CmdGetAsync(message, getMatach.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TaskCanceledException) { }
-            catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendToGroup) { }
-            catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
-        }
 
         #region Commands
         /* HELP */
-        private async Task CmdHelpAsync(ChatMessage message, CancellationToken cancellationToken = default)
+        [Command("notes help")]
+        private async Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
-            WolfUser owner = await _client.GetUserAsync(_botOptions.CurrentValue.OwnerID, cancellationToken).ConfigureAwait(false);
-            await _client.ReplyTextAsync(message, string.Format(@"Notes commands:
+            WolfUser owner = await context.Client.GetUserAsync(_botOptions.OwnerID, cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync(string.Format(@"Notes commands:
 `{0}notes` - get list of your notes
 `{0}notes <ID>` - get a specific note
 `{0}notes add <text>` - adds a new note
@@ -97,26 +45,28 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
 `{0}notes clear` - removes all your notes
 
 For bug reports or suggestions, contact {1} (ID: {2})",
-_botOptions.CurrentValue.CommandPrefix, owner.Nickname, owner.ID),
+context.Options.Prefix, owner.Nickname, owner.ID),
 cancellationToken).ConfigureAwait(false);
         }
 
         /* GET */
-        private async Task CmdGetAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
+        [RegexCommand(@"^notes?(?:\s(.+))?")]
+        [Priority(-41)]
+        private async Task CmdGetAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
             // if no ID provided, get all
             if (string.IsNullOrWhiteSpace(userInput))
             {
-                UserData data = await GetOrCreateUserData(message, cancellationToken).ConfigureAwait(false);
+                UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
                 if (data?.Notes?.Any() != true)
                 {
-                    await _client.ReplyTextAsync(message, "Your notes list is empty.", cancellationToken).ConfigureAwait(false);
+                    await context.ReplyTextAsync("Your notes list is empty.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
                 // concat all
-                int maxMsgLength = _notesOptions.CurrentValue.MaxMessageLength;
-                int maxNoteLength = _notesOptions.CurrentValue.MaxLengthPerBulkNote;
+                int maxMsgLength = _notesOptions.MaxMessageLength;
+                int maxNoteLength = _notesOptions.MaxLengthPerBulkNote;
                 List<string> entries = new List<string>(data.Notes.Select(pair => $"{pair.Key}: {pair.Value}"));
                 // keep list of entries, so can remove last one if adding "not all fit message" requires that
                 List<string> includedEntries = new List<string>(data.Notes.Count);
@@ -146,121 +96,118 @@ cancellationToken).ConfigureAwait(false);
                     includedEntries.Add(appendNotif);
                 }
 
-                await _client.ReplyTextAsync(message, string.Join("\r\n", includedEntries), cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(string.Join("\r\n", includedEntries), cancellationToken).ConfigureAwait(false);
             }
             // otherwise, get a specific one
             else
             {
                 if (!uint.TryParse(userInput, out uint id))
                 {
-                    await _client.ReplyTextAsync(message, $"(n) `{userInput}` is not a valid note ID.", cancellationToken).ConfigureAwait(false);
+                    await context.ReplyTextAsync($"(n) `{userInput}` is not a valid note ID.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
-                UserData data = await GetOrCreateUserData(message, cancellationToken).ConfigureAwait(false);
+                UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
                 if (!data.Notes.TryGetValue(id, out string note))
                 {
-                    await _client.ReplyTextAsync(message, $"(n) You don't have a note with ID {id}.", cancellationToken).ConfigureAwait(false);
+                    await context.ReplyTextAsync($"(n) You don't have a note with ID {id}.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
-                await _client.ReplyTextAsync(message, note, cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(note, cancellationToken).ConfigureAwait(false);
             }
         }
 
         
         /* ADD */
-        private async Task CmdAddAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
+        [RegexCommand(@"^notes?\sadd(?:\s(.+))?")]
+        private async Task CmdAddAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
             // validate not empty
             string note = userInput.Trim();
             if (string.IsNullOrWhiteSpace(note))
             {
-                await _client.ReplyTextAsync(message, $"(n) Cannot add an empty note.", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync($"(n) Cannot add an empty note.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // validate not too long
-            UserNotesOptions options = _notesOptions.CurrentValue;
-            if (note.Length > options.MaxNoteLength)
+            if (note.Length > _notesOptions.MaxNoteLength)
             {
-                await _client.ReplyTextAsync(message, $"(n) User notes can have maximum {options.MaxNoteLength} characters. Your note has {note.Length} characters.", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync($"(n) User notes can have maximum {_notesOptions.MaxNoteLength} characters. Your note has {note.Length} characters.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // validate not at max already and get next free ID slot at once
-            UserData data = await GetOrCreateUserData(message, cancellationToken).ConfigureAwait(false);
+            UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
             uint id = default;
-            for (uint i = 1; i <= options.MaxNotesCount; i++)
+            for (uint i = 1; i <= _notesOptions.MaxNotesCount; i++)
             {
                 if (!data.Notes.ContainsKey(i))
                 {
                     id = i;
                     break;
                 }
-                if (i == options.MaxNotesCount)
+                if (i == _notesOptions.MaxNotesCount)
                 {
-                    await _client.ReplyTextAsync(message, $"(n) You reached limit of {options.MaxNotesCount} notes per user.", cancellationToken).ConfigureAwait(false);
+                    await context.ReplyTextAsync($"(n) You reached limit of {_notesOptions.MaxNotesCount} notes per user.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
 
             // insert note and save data
             data.Notes.Add(id, note);
-            await _client.ReplyTextAsync(message, $"(y) Your note added at position {id}.", cancellationToken).ConfigureAwait(false);
-            await SaveUserDataAsync(message, data, cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync($"(y) Your note added at position {id}.", cancellationToken).ConfigureAwait(false);
+            await SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
         }
 
 
         /* REMOVE */
-        private async Task CmdRemoveAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
+        [RegexCommand(@"^notes?\s(?:del|delete|remove)(?:\s(.+))?")]
+        private async Task CmdRemoveAsync(CommandContext context,
+             [MissingError("(n) Please provide a valid note ID.")] [ConvertingError("(n) `{{Arg}}` is not a valid note ID.")] uint noteID, CancellationToken cancellationToken = default)
         {
-            if (!uint.TryParse(userInput, out uint id))
+            UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
+            if (!data.Notes.Remove(noteID))
             {
-                await _client.ReplyTextAsync(message, $"(n) `{userInput}` is not a valid note ID.", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync($"(n) You don't have a note with ID {noteID}.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            UserData data = await GetOrCreateUserData(message, cancellationToken).ConfigureAwait(false);
-            if (!data.Notes.Remove(id))
-            {
-                await _client.ReplyTextAsync(message, $"(n) You don't have a note with ID {id}.", cancellationToken).ConfigureAwait(false);
-                return;
-            }
-
-            await _client.ReplyTextAsync(message, $"(y) Note {id} removed.", cancellationToken).ConfigureAwait(false);
-            await SaveUserDataAsync(message, data, cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync($"(y) Note {noteID} removed.", cancellationToken).ConfigureAwait(false);
+            await SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
         }
 
 
         /* CLEAR */
-        private async Task CmdClearAsync(ChatMessage message, CancellationToken cancellationToken = default)
+        [RegexCommand("notes clear")]
+        private async Task CmdClearAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
-            UserData data = await GetOrCreateUserData(message, cancellationToken).ConfigureAwait(false);
+            UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
             bool needsSaving = data.Notes.Any();
             data.Notes.Clear();
-            await _client.ReplyTextAsync(message, $"(y) Your notes list cleared.", cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync($"(y) Your notes list cleared.", cancellationToken).ConfigureAwait(false);
             if (needsSaving)
-                await SaveUserDataAsync(message, data, cancellationToken).ConfigureAwait(false);
+                await SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
         }
         #endregion
 
         #region Helpers
-        private async Task<UserData> GetOrCreateUserData(ChatMessage message, CancellationToken cancellationToken = default)
+        private async Task<UserData> GetOrCreateUserData(CommandContext context, CancellationToken cancellationToken = default)
         {
             try
             {
-                UserData result = await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false);
-                return result ?? new UserData(message.SenderID.Value);
+                UserData result = await _userDataStore.GetUserDataAsync(context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false);
+                return result ?? new UserData(context.Message.SenderID.Value);
             }
             catch
             {
-                await _client.ReplyTextAsync(message, "/alert Failed retrieving user data from the database.", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync("/alert Failed retrieving user data from the database.", cancellationToken).ConfigureAwait(false);
                 throw;
             }
         }
 
-        private async Task<bool> SaveUserDataAsync(ChatMessage message, UserData data, CancellationToken cancellationToken = default)
+        private async Task<bool> SaveUserDataAsync(CommandContext context, UserData data, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -269,30 +216,10 @@ cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex.LogAsError(_log, "Failed saving notes for user {UserID} in the database", data.ID))
             {
-                await _client.ReplyTextAsync(message, "/alert Failed saving notes in the database.", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync("/alert Failed saving notes in the database.", cancellationToken).ConfigureAwait(false);
                 return false;
             }
         }
         #endregion
-
-        // Implementing IHostedService ensures this class is created on start
-        Task IHostedService.StartAsync(CancellationToken cancellationToken)
-        {
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            return Task.CompletedTask;
-        }
-        Task IHostedService.StopAsync(CancellationToken cancellationToken)
-        {
-            this.Dispose();
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            this._client?.RemoveMessageListener<ChatMessage>(OnChatMessage);
-            this._cts?.Cancel();
-            this._cts?.Dispose();
-            this._cts = null;
-        }
     }
 }

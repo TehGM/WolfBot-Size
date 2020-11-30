@@ -1,121 +1,63 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
-using TehGM.Wolfringo.Hosting;
+using TehGM.Wolfringo.Commands;
 using TehGM.Wolfringo.Messages;
-using TehGM.Wolfringo.Messages.Responses;
+using TehGM.Wolfringo.Utilities;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
 {
-    public class NextGameHandler : IHostedService
+    [CommandsHandler]
+    public class NextGameHandler
     {
-        private readonly IHostedWolfClient _client;
-        private readonly IOptionsMonitor<BotOptions> _botOptions;
-        private readonly IOptionsMonitor<NextGameOptions> _nextGameOptions;
+        private readonly BotOptions _botOptions;
+        private readonly NextGameOptions _nextGameOptions;
         private readonly IGroupConfigStore _groupConfigStore;
         private readonly ILogger _log;
-        private readonly IHostEnvironment _environment;
 
-        private CancellationTokenSource _cts;
-        private readonly Regex _nextCommandRegex = new Regex(@"^next(?:\s(\S+))?", BotCommandUtilities.DefaultRegexOptions);
-        private readonly Regex _nextContinueCommandRegex = new Regex(@"^next\scontinue(?:\s(\S+))?", BotCommandUtilities.DefaultRegexOptions);
-        private readonly Regex _nextUpdateCommandRegex = new Regex(@"^next\supdate(?:\s(\S+))?", BotCommandUtilities.DefaultRegexOptions);
-
-        public NextGameHandler(IHostedWolfClient client, IGroupConfigStore groupConfigStore, IHostEnvironment environment,
-            IOptionsMonitor<BotOptions> botOptions, IOptionsMonitor<NextGameOptions> nextGameOptions, ILogger<NextGameHandler> logger)
+        public NextGameHandler(IGroupConfigStore groupConfigStore, IOptionsSnapshot<BotOptions> botOptions, IOptionsSnapshot<NextGameOptions> nextGameOptions, ILogger<NextGameHandler> log)
         {
             // store all services
-            this._log = logger;
-            this._botOptions = botOptions;
-            this._client = client;
+            this._log = log;
+            this._botOptions = botOptions.Value;
             this._groupConfigStore = groupConfigStore;
-            this._nextGameOptions = nextGameOptions;
-            this._environment = environment;
-
-            // add client listeners
-            this._client.AddMessageListener<ChatMessage>(OnChatMessage);
+            this._nextGameOptions = nextGameOptions.Value;
         }
 
-        private async void OnChatMessage(ChatMessage message)
+        [RegexCommand(@"^next\supdate(?:\s(\S+))?")]
+        [Priority(-11)]
+        [GroupOnly]
+        [RequireBotGroupAdmin]
+        [RequireGroupAdmin]
+        private async Task CmdUpdateAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
-            using IDisposable logScope = message.BeginLogScope(_log);
-
-            // run only in prod, test group or owner PM
-            if (!_environment.IsProduction() &&
-                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
-                (message.IsPrivateMessage && message.SenderID == _botOptions.CurrentValue.OwnerID)))
-                return;
-
-            try
-            {
-                // check if this is a correct command
-                if (!message.IsText || !message.IsGroupMessage)
-                    return;
-                if (!message.TryGetCommandValue(_botOptions.CurrentValue, out string command))
-                    return;
-
-                CancellationToken cancellationToken = _cts?.Token ?? default;
-
-                if (command.StartsWith("next", StringComparison.OrdinalIgnoreCase) && !message.IsGroupMessage)
-                {
-                    await _client.ReplyTextAsync(message, "(n) Pulling next guesswhat game is possible only in groups.", cancellationToken).ConfigureAwait(false);
-                    return;
-                }
-
-                if (_nextUpdateCommandRegex.TryGetMatch(command, out Match updateMatch))
-                    await CmdUpdateAsync(message, updateMatch.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
-                else if (_nextContinueCommandRegex.TryGetMatch(command, out Match continueMatch))
-                    await CmdContinueAsync(message, continueMatch.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
-                // this command should always come last!!
-                else if (_nextCommandRegex.TryGetMatch(command, out Match nextMatch))
-                    await CmdNextAsync(message, nextMatch.Groups[1]?.Value, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TaskCanceledException) { }
-            catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendToGroup) { }
-            catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
-        }
-
-        private async Task CmdUpdateAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
-        {
-            // check everyone has right permission
-            if (!await CheckUserHasAdminAsync(message.SenderID.Value, message.RecipientID, cancellationToken).ConfigureAwait(false))
-            {
-                await _client.ReplyTextAsync(message, "(n) You need at least admin privileges to do this.", cancellationToken).ConfigureAwait(false);
-                return;
-            }
-            if (!await CheckUserHasAdminAsync(_client.CurrentUserID.Value, message.RecipientID, cancellationToken).ConfigureAwait(false))
-            {
-                await _client.ReplyTextAsync(message, "(n) I need at least admin privileges to do this.", cancellationToken).ConfigureAwait(false);
-                return;
-            }
-
             // determine ID to set, if null means failed (message will be sent automatically
-            uint? nextID = await GetNextIdAsync(message, userInput, cancellationToken).ConfigureAwait(false);
+            uint? nextID = await GetNextIdAsync(context, userInput, cancellationToken).ConfigureAwait(false);
             if (nextID == null)
                 return;
 
             // start interactive session with AP to update
-            NextGameOptions options = this._nextGameOptions.CurrentValue;
-            await _client.ReplyTextAsync(message, options.AutoPostBotRemoveCommand, cancellationToken).ConfigureAwait(false);
-            ChatMessage botResponse = await _client.AwaitNextGroupByUserAsync(options.AutoPostBotID, message.RecipientID, TimeSpan.FromSeconds(options.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync(_nextGameOptions.AutoPostBotRemoveCommand, cancellationToken).ConfigureAwait(false);
+            ChatMessage botResponse = await context.Client.AwaitNextGroupByUserAsync(_nextGameOptions.AutoPostBotID, context.Message.RecipientID, TimeSpan.FromSeconds(_nextGameOptions.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
             if (botResponse == null)
-                await _client.ReplyTextAsync(message, $"(n) AP didn't respond within {options.AutoPostBotWaitSeconds} seconds.");
+                await context.ReplyTextAsync($"(n) AP didn't respond within {_nextGameOptions.AutoPostBotWaitSeconds} seconds.");
             else
-                await _client.ReplyTextAsync(message, BotInteractionUtilities.GetAutopostBotAddCommand(options, nextID), cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(BotInteractionUtilities.GetAutopostBotAddCommand(_nextGameOptions, nextID), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
+            await SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task CmdContinueAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
+        [RegexCommand(@"^next\scontinue(?:\s(\S+))?")]
+        [Priority(-10)]
+        [GroupOnly]
+        private async Task CmdContinueAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
             // try user input first
             string rawNextID;
@@ -124,12 +66,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             // if user did not provide ID, start interactive session with AP
             else
             {
-                NextGameOptions options = this._nextGameOptions.CurrentValue;
-                await _client.ReplyTextAsync(message, options.AutoPostBotPostCommand, cancellationToken).ConfigureAwait(false);
-                ChatMessage botResponse = await _client.AwaitNextGroupByUserAsync(options.AutoPostBotID, message.RecipientID, TimeSpan.FromSeconds(options.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(_nextGameOptions.AutoPostBotPostCommand, cancellationToken).ConfigureAwait(false);
+                ChatMessage botResponse = await context.Client.AwaitNextGroupByUserAsync(_nextGameOptions.AutoPostBotID, context.Message.RecipientID, TimeSpan.FromSeconds(_nextGameOptions.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
                 if (botResponse == null)
                 {
-                    await _client.ReplyTextAsync(message, $"(n) AP didn't respond within {options.AutoPostBotWaitSeconds} seconds.");
+                    await context.ReplyTextAsync($"(n) AP didn't respond within {_nextGameOptions.AutoPostBotWaitSeconds} seconds.");
                     return;
                 }
                 rawNextID = botResponse.Text;
@@ -138,32 +79,35 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             // validate ID
             if (!uint.TryParse(rawNextID, out uint nextID))
             {
-                await _client.ReplyTextAsync(message, $"(n) {rawNextID} is not a correct game ID!", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync($"(n) {rawNextID} is not a correct game ID!", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // request next
-            await _client.ReplyTextAsync(message, BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions.CurrentValue, nextID), cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync(BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions, nextID), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(message.RecipientID, nextID, cancellationToken).ConfigureAwait(false);
+            await SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task CmdNextAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
+        [RegexCommand(@"^next(?:\s(\S+))?")]
+        [Priority(-12)]
+        [GroupOnly]
+        private async Task CmdNextAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
-            uint? nextID = await GetNextIdAsync(message, userInput, cancellationToken).ConfigureAwait(false);
+            uint? nextID = await GetNextIdAsync(context, userInput, cancellationToken).ConfigureAwait(false);
             if (nextID == null)
                 return;
 
             // request next
-            await _client.ReplyTextAsync(message, BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions.CurrentValue, nextID.Value), cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync(BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions, nextID.Value), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
+            await SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
         }
 
         #region Helpers
-        private async Task<bool> SaveGroupConfigAsync(uint groupID, uint currentID, CancellationToken cancellationToken = default)
+        private async Task<bool> SaveGroupConfigAsync(IWolfClient client, uint groupID, uint currentID, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -174,21 +118,20 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             }
             catch (Exception ex) when (ex.LogAsError(_log, "Failed saving group config for group {GroupID} in the database", groupID))
             {
-                await _client.SendGroupTextMessageAsync(groupID, "/alert Failed saving group config in the database.", cancellationToken).ConfigureAwait(false);
+                await client.SendGroupTextMessageAsync(groupID, "/alert Failed saving group config in the database.", cancellationToken).ConfigureAwait(false);
                 return false;
             }
         }
 
-        private async Task<uint?> GetNextIdAsync(ChatMessage message, string userInput, CancellationToken cancellationToken = default)
+        private async Task<uint?> GetNextIdAsync(CommandContext context, string userInput, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userInput))
             {
-                GroupConfig groupConfig = await _groupConfigStore.GetGroupConfigAsync(message.RecipientID, cancellationToken).ConfigureAwait(false);
+                GroupConfig groupConfig = await _groupConfigStore.GetGroupConfigAsync(context.Message.RecipientID, cancellationToken).ConfigureAwait(false);
                 if (groupConfig == null || groupConfig.CurrentGuesswhatGameID == null)
                 {
-                    string prefix = _botOptions.CurrentValue.CommandPrefix;
-                    await _client.ReplyTextAsync(message, "(n) I do not know the next GW game ID for this group.\r\n" +
-                        $"Use `{prefix}next <ID>` to set it, or `{prefix}next continue` to take it from AP", cancellationToken).ConfigureAwait(false);
+                    await context.ReplyTextAsync("(n) I do not know the next GW game ID for this group.\r\n" +
+                        $"Use `{context.Options.Prefix}next <ID>` to set it, or `{context.Options.Prefix}next continue` to take it from AP", cancellationToken).ConfigureAwait(false);
                     return null;
                 }
                 else
@@ -196,7 +139,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             }
             if (!uint.TryParse(userInput, out uint nextID))
             {
-                await _client.ReplyTextAsync(message, $"(n) `{userInput}` is not a correct game ID!", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync($"(n) `{userInput}` is not a correct game ID!", cancellationToken).ConfigureAwait(false);
                 return null;
             }
             else return nextID;
@@ -204,7 +147,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
 
         private uint GetNextExistingID(uint currentID)
         {
-            uint[] knownIDs = _nextGameOptions.CurrentValue.KnownGuesswhatIDs;
+            uint[] knownIDs = _nextGameOptions.KnownGuesswhatIDs;
 
             // if no known IDs, return +1
             if (knownIDs == null || knownIDs.Length == 0)
@@ -245,33 +188,6 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             }
             throw new KeyNotFoundException();
         }
-
-        private async Task<bool> CheckUserHasAdminAsync(uint userID, uint groupID, CancellationToken cancellationToken = default)
-        {
-            WolfGroup group = await _client.GetGroupAsync(groupID, cancellationToken).ConfigureAwait(false);
-            WolfGroupMember member = group.Members[userID];
-            return member.HasAdminPrivileges;
-        }
         #endregion
-
-        // Implementing IHostedService ensures this class is created on start
-        Task IHostedService.StartAsync(CancellationToken cancellationToken)
-        {
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            return Task.CompletedTask;
-        }
-        Task IHostedService.StopAsync(CancellationToken cancellationToken)
-        {
-            this.Dispose();
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            this._client?.RemoveMessageListener<ChatMessage>(OnChatMessage);
-            this._cts?.Cancel();
-            this._cts?.Dispose();
-            this._cts = null;
-        }
     }
 }

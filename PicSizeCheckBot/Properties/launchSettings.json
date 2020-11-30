@@ -2,6 +2,7 @@
   "profiles": {
     "PicSizeCheckBot": {
       "commandName": "Project",
+      "commandLineArgs": "--Environment=Development",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }

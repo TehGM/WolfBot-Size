@@ -20,7 +20,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IMongoConnection, MongoConnection>();
             services.TryAddSingleton<IIdQueueStore, MongoIdQueuesStore>();
             services.TryAddSingleton<IIdQueueCache, IdQueueCache>();
-            services.AddHostedService<QueuesSystemHandler>();
 
             if (configurationSection != null)
                 services.Configure<QueuesSystemOptions>(configurationSection);

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
-using TehGM.WolfBots.PicSizeCheckBot.AdminUtilities;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Caching.Services;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
@@ -24,9 +23,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IUserDataStore, MongoUserDataStore>();
             services.TryAddSingleton<IIdQueueStore, MongoIdQueuesStore>();
             services.TryAddSingleton<IGroupConfigStore, MongoGroupConfigStore>();
-            //handlers
-            services.AddHostedService<CacheAdminHandler>();
-            services.AddHostedService<BotAdminHandler>();
 
             return services;
         }

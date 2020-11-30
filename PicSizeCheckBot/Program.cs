@@ -32,6 +32,7 @@ using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.WolfBots.PicSizeCheckBot.QueuesSystem;
 using TehGM.WolfBots.PicSizeCheckBot.SizeChecking;
 using TehGM.WolfBots.PicSizeCheckBot.UserNotes;
+using TehGM.Wolfringo.Commands;
 using TehGM.Wolfringo.Hosting;
 
 namespace TehGM.WolfBots.PicSizeCheckBot
@@ -54,6 +55,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                 {
                     // configure options
                     services.Configure<BotOptions>(context.Configuration);
+                    services.Configure<CommandsOptions>(context.Configuration.GetSection("Commands"));
                     services.Configure<HostedWolfClientOptions>(context.Configuration.GetSection("WolfClient"));
                     services.Configure<SizeCheckingOptions>(context.Configuration.GetSection("PictureSize"));
                     services.Configure<QueuesSystemOptions>(context.Configuration.GetSection("QueuesSystem"));
@@ -71,18 +73,18 @@ namespace TehGM.WolfBots.PicSizeCheckBot
 
                     // add hosted wolf client
                     services.AddWolfClient();
+                    services.AddWolfringoCommands();
 
                     // add caching
                     services.AddEntityCaching();
 
-                    // add handlers
+                    // add features
                     services.AddSizeChecking();
                     services.AddAdminUtilities();
                     services.AddQueuesSystem();
                     services.AddNextGameUtility();
                     services.AddUserNotes();
                     services.AddMentions();
-                    services.AddHostedService<HelpHandler>();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(context, config), true)
                 .Build();

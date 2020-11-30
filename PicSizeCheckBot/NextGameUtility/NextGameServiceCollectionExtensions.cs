@@ -19,7 +19,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IMongoConnection, MongoConnection>();
             services.TryAddSingleton<IGroupConfigStore, MongoGroupConfigStore>();
             services.TryAddSingleton<IGroupConfigCache, GroupConfigCache>();
-            services.AddHostedService<NextGameHandler>();
 
             if (configurationSection != null)
                 services.Configure<NextGameOptions>(configurationSection);
