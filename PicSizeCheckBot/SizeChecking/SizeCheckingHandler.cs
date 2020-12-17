@@ -282,6 +282,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 // if disabled for all, can return early
                 if (!groupConfig.IsEnabled || (!groupConfig.ListenUsers && !groupConfig.ListenMods && !groupConfig.ListenAdmins && !groupConfig.ListenBots))
                     return false;
+                // same if enabled for for all
+                if (groupConfig.IsEnabled && groupConfig.ListenUsers && groupConfig.ListenMods && groupConfig.ListenAdmins && groupConfig.ListenBots)
+                    return true;
 
                 // check for all permissions
                 WolfGroupMember member = await GetGroupMemberAsync(context, cancellationToken).ConfigureAwait(false);
