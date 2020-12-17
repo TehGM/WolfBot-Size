@@ -22,7 +22,7 @@ Bot features and commands: https://github.com/TehGM/WolfBot-Size/wiki
 Questions, suggestions or bugs reports: https://github.com/TehGM/WolfBot-Size/issues.
 Sponsor my work: https://github.com/sponsors/TehGM
 
-Using Wolfringo library v1.0.0-beta4
+Using Wolfringo library v1.0.0-beta5
 Bot version: v{GetVersion()}
 Copyright © 2020 TehGM",  // due to AGPL licensing, this line cannot be changed or removed, unless by the original author
 cancellationToken);
