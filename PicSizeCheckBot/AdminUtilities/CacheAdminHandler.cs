@@ -7,15 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Caching;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
-using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
 using TehGM.Wolfringo.Commands;
-using TehGM.Wolfringo.Hosting;
-using TehGM.Wolfringo.Messages;
-using TehGM.Wolfringo.Messages.Responses;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 {
+    [CommandsHandler]
+    [Hidden]
     public class CacheAdminHandler
     {
         private readonly ILogger _log;

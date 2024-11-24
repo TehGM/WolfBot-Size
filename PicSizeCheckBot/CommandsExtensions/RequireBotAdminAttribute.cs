@@ -15,12 +15,12 @@ namespace TehGM.Wolfringo.Commands
             ErrorMessage = "(n) You are not permitted to do this!";
         }
 
-        public override async Task<bool> CheckAsync(ICommandContext context, IServiceProvider services, CancellationToken cancellationToken = default)
+        public override async Task<ICommandResult> CheckAsync(ICommandContext context, IServiceProvider services, CancellationToken cancellationToken = default)
         {
             IUserDataStore userDataStore = services.GetRequiredService<IUserDataStore>();
             // check if user is bot admin
             UserData userData = await userDataStore.GetUserDataAsync(context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false);
-            return userData.IsBotAdmin;
+            return base.ResultFromBoolean(userData.IsBotAdmin);
         }
     }
 }

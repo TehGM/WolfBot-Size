@@ -85,7 +85,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 }
             }
             catch (TaskCanceledException) { }
-            catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendToGroup) { }
+            catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendMessage) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
         }
 

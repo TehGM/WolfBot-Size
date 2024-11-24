@@ -11,6 +11,7 @@ using TehGM.Wolfringo.Messages.Responses;
 namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 {
     [CommandsHandler]
+    [Hidden]
     public class BotAdminHandler : IDisposable
     {
         private readonly IWolfClient _client;

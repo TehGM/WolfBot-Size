@@ -10,58 +10,64 @@ using TehGM.WolfBots.PicSizeCheckBot.Database;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
 using TehGM.Wolfringo.Commands;
+using TehGM.Wolfringo.Commands.Help;
 using TehGM.Wolfringo.Utilities;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
 {
     [CommandsHandler]
+    [HelpCategory("Queues System")]
     public class QueuesSystemHandler
     {
         private readonly QueuesSystemOptions _queuesOptions;
         private readonly BotOptions _botOptions;
+        private readonly CommandsOptions _commandsOptions;
         private readonly IIdQueueStore _idQueueStore;
         private readonly IUserDataStore _userDataStore;
+        private readonly ICommandsService _commandsService;
         private readonly ILogger _log;
 
-        public QueuesSystemHandler(IIdQueueStore idQueueStore, IUserDataStore userDataStore, IOptionsSnapshot<QueuesSystemOptions> queuesOptions, IOptionsSnapshot<BotOptions> botOptions, ILogger<QueuesSystemHandler> logger)
+        public QueuesSystemHandler(IIdQueueStore idQueueStore, IUserDataStore userDataStore, ICommandsService commandsService, IOptionsSnapshot<CommandsOptions> commandsOptions,
+            IOptionsSnapshot<QueuesSystemOptions> queuesOptions, IOptionsSnapshot<BotOptions> botOptions, ILogger<QueuesSystemHandler> logger)
         {
-            // store all services
             this._log = logger;
             this._botOptions = botOptions.Value;
             this._queuesOptions = queuesOptions.Value;
             this._idQueueStore = idQueueStore;
             this._userDataStore = userDataStore;
+            this._commandsService = commandsService;
+            this._commandsOptions = commandsOptions.Value;
         }
 
         #region Commands
-        [Command("queue help")]
+        [RegexCommand("^queues? help")]
         [Command("queues help")]
+        [Hidden]
         private async Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
             WolfUser owner = await context.Client.GetUserAsync(_botOptions.OwnerID, cancellationToken).ConfigureAwait(false);
-            await context.ReplyTextAsync(string.Format(@"Queue commands:
-`{0}<queue name> queue next` - pulls the next ID from <queue name>
-`{0}<queue name> queue add <IDs>` - adds IDs
-`{0}<queue name> queue show` - shows all IDs
-`{0}<queue name> queue remove <IDs>` - removes selected IDs
-`{0}<queue name> queue clear` - removes all IDs
-`{0}<queue name> queue rename <new name>` - changes name
-`{0}<queue name> queue claim` - claims the queue, so you can use ""my"" as it's name
-`{0}<queue name> queue transfer <user ID>` - transfers ownership of the queue
-`{0}<queue name> info` - shows info about the queue
+
+            CommandsListBuilder builder = new CommandsListBuilder(
+                this._commandsService.Commands.Where(cmd => cmd.GetHelpCategory()?.Name == "Queues System"));
+            builder.PrependedPrefix = this._commandsOptions.Prefix;
+            builder.ListCommandsWithoutSummaries = false;
+            builder.SpaceCategories = false;
+
+            await context.ReplyTextAsync($@"{builder.GetCommandsList()}
 
 `clear` and `remove` can only be used on your own queue, or a queue without an owner.
 `rename` and `transfer` can only be used if you own the queue.
 `claim` can only be used if the queue isn't already claimed. You can check that using `info`.
 
-For bug reports or suggestions, contact {1} (ID: {2})",
-context.Options.Prefix, owner.Nickname, owner.ID),
+For bug reports or suggestions, contact {owner.Nickname} (ID: {owner.ID})",
 cancellationToken).ConfigureAwait(false);
         }
 
         /* NEXT */
         [RegexCommand(@"^(.+)?\squeue\snext")]
         [RegexCommand(@"^(.+)?\squeue\s*$")]
+        [DisplayName("<queue name> queue next")]
+        [Summary("pulls the next ID from <queue name>")]
         [Priority(-30)]
         [GroupOnly]
         private async Task CmdNextAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
@@ -83,6 +89,8 @@ cancellationToken).ConfigureAwait(false);
 
         /* ADD */
         [RegexCommand(@"^(.+)?\squeue(?:\sadd)?(?:\s(.*))?$")]
+        [DisplayName("<queue name> queue add <ids>")]
+        [Summary("adds IDs")]
         [Priority(-32)]
         private async Task CmdAddAsync(CommandContext context, string queueName,
             [MissingError("(n) Please provide IDs to add.")] string args, CancellationToken cancellationToken = default)
@@ -124,6 +132,8 @@ cancellationToken).ConfigureAwait(false);
 
         /* SHOW */
         [RegexCommand(@"^(.+)?\squeue\sshow")]
+        [DisplayName("<queue name> queue show")]
+        [Summary("shows all IDs")]
         [Priority(-31)]
         private async Task CmdShowAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
         {
@@ -143,6 +153,8 @@ cancellationToken).ConfigureAwait(false);
 
         /* REMOVE */
         [RegexCommand(@"^(.+)?\squeue\sremove(?:\s(.*))?$")]
+        [DisplayName("<queue name> queue remove <ids>")]
+        [Summary("removes selected IDs")]
         [Priority(-31)]
         private async Task CmdRemoveAsync(CommandContext context, string queueName,
             [MissingError("(n) Please provide IDs to remove.")] string args, CancellationToken cancellationToken = default)
@@ -182,6 +194,8 @@ cancellationToken).ConfigureAwait(false);
 
         /* CLEAR */
         [RegexCommand(@"^(.+)?\squeue\sclear")]
+        [DisplayName("<queue name> queue clear")]
+        [Summary("removes all IDs")]
         [Priority(-31)]
         private async Task CmdClearAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
         {
@@ -204,6 +218,8 @@ cancellationToken).ConfigureAwait(false);
 
         /* RENAME */
         [RegexCommand(@"^(.+)?\squeue\srename(?:\s(.*))?$")]
+        [DisplayName("<queue name> rename <new name>")]
+        [Summary("changes name")]
         [Priority(-31)]
         private async Task CmdRenameAsync(CommandContext context, string queueName, string args = null, CancellationToken cancellationToken = default)
         {
@@ -249,6 +265,8 @@ cancellationToken).ConfigureAwait(false);
 
         /* TRANSFER */
         [RegexCommand(@"^(.+)?\squeue\stransfer(?:\s(.*))?$")]
+        [DisplayName("<queue name> queue transfer <user id>")]
+        [Summary("transfers ownership of the queue")]
         [Priority(-31)]
         private async Task CmdTransferAsync(CommandContext context, string queueName, 
             [MissingError("(n) Please provide ID of the user to transfer the queue to.")][ConvertingError("(n) `{{Arg}}` is not a valid user ID.")] uint newOwnerID, CancellationToken cancellationToken = default)
@@ -286,6 +304,8 @@ cancellationToken).ConfigureAwait(false);
 
         /* INFO */
         [RegexCommand(@"^(.+)?\squeue\sinfo")]
+        [DisplayName("<queue name> info")]
+        [Summary("shows info about the queue")]
         [Priority(-31)]
         private async Task CmdInfoAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
         {
