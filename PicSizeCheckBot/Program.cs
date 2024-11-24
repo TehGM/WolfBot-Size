@@ -102,13 +102,13 @@ namespace TehGM.WolfBots.PicSizeCheckBot
                     source: ".NET",
                     service: ddOptions.ServiceName ?? "WolfBots-Size",
                     host: ddOptions.HostName ?? Environment.MachineName,
-                    new string[] {
+                    [
                                 $"env:{(ddOptions.EnvironmentName ?? context.HostingEnvironment.EnvironmentName)}",
                                 $"assembly:{(ddOptions.AssemblyName ?? context.HostingEnvironment.ApplicationName)}"
-                    },
+                    ],
                     ddOptions.ToDatadogConfiguration(),
                     // no need for debug logs in datadag
-                    logLevel: ddOptions.OverrideLogLevel ?? LogEventLevel.Verbose
+                    restrictedToMinimumLevel: ddOptions.OverrideLogLevel ?? LogEventLevel.Verbose
                 );
             }
         }

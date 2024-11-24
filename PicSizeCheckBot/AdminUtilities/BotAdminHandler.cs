@@ -27,7 +27,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
             this._cts = new CancellationTokenSource();
 
             // add client listeners
-            this._client.AddMessageListener<WelcomeEvent>(OnLoggedIn);
+            this._client.AddMessageListener<WelcomeEvent>(this.OnLoggedIn);
 
             // init relog requests track
             this._reconnectRequests = new List<CommandContext>(1);
@@ -120,7 +120,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
         {
             try
             {
-                if (!_reconnecting || !_reconnectRequests.Any())
+                if (!_reconnecting || _reconnectRequests.Count == 0)
                     return;
 
                 for (int i = 0; i < _reconnectRequests.Count; i++)
@@ -135,7 +135,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
         public void Dispose()
         {
-            this._client?.RemoveMessageListener<WelcomeEvent>(OnLoggedIn);
+            this._client?.RemoveMessageListener<WelcomeEvent>(this.OnLoggedIn);
             try { this._cts?.Cancel(); } catch { }
             try { this._cts?.Dispose(); } catch { }
         }

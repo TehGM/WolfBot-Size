@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.Wolfringo;
@@ -31,7 +33,15 @@ cancellationToken);
         {
             FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(typeof(HelpHandler).Assembly.Location);
             if (!string.IsNullOrWhiteSpace(versionInfo.ProductVersion))
-                return versionInfo.ProductVersion;
+            {
+                string version = Assembly.GetExecutingAssembly()
+                        .GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+                int hashIndex = version.IndexOf('+');
+                if (hashIndex > 0)
+                    version = version.Substring(0, hashIndex);
+                return version;
+            }
+
             string result = $"{versionInfo.FileMajorPart}.{versionInfo.FileMinorPart}.{versionInfo.FileBuildPart}";
             if (versionInfo.FilePrivatePart != 0)
                 result += $".{versionInfo.FilePrivatePart}";
