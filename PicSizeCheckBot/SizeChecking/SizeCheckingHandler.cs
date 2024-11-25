@@ -74,6 +74,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 (message.IsPrivateMessage && message.SenderID == _botOptions.CurrentValue.OwnerID)))
                 return;
 
+            if (this._client.CurrentUserID != null && message.SenderID == this._client.CurrentUserID)
+                return;
+
             CommandContext context = new CommandContext(message, this._client, this._commandsOptions.CurrentValue);
             using IDisposable logScope = this._log.BeginCommandScope(context, this);
             try
