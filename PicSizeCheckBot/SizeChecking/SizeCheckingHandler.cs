@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
@@ -252,7 +252,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 { "GroupName", context.IsGroup ? context.Message.RecipientID.ToString() : null }
             });
 
-            Image img = null;
+            ImageInfo img = null;
             try
             {
                 img = await this.DownloadImageAsync(imageUrl, cancellationToken).ConfigureAwait(false);
@@ -394,14 +394,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         public PictureSize Verify(Size size)
             => new PictureSize(size.Width, size.Height, _picSizeOptions.CurrentValue.MinimumValidSize, _picSizeOptions.CurrentValue.MaximumValidSize);
 
-        private async Task<Image> DownloadImageAsync(string imageUrl, CancellationToken cancellationToken = default)
+        private async Task<ImageInfo> DownloadImageAsync(string imageUrl, CancellationToken cancellationToken = default)
         {
-            _log.LogDebug("Downloading image from {ImageURL}", imageUrl);
-            HttpClient client = _httpClientFactory.CreateClient();
+            this._log.LogDebug("Downloading image from {ImageURL}", imageUrl);
+            HttpClient client = this._httpClientFactory.CreateClient();
             using Stream imageStream = await client.GetStreamAsync(imageUrl, cancellationToken).ConfigureAwait(false);
-            using MemoryStream memoryStream = new MemoryStream();
-            await imageStream.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
-            return Image.FromStream(memoryStream);
+            return await Image.IdentifyAsync(imageStream, cancellationToken);
         }
         #endregion
 
