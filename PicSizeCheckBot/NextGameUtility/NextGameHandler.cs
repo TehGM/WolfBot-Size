@@ -35,29 +35,29 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
         [GroupOnly]
         [RequireBotGroupAdmin]
         [RequireGroupAdmin]
-        private async Task CmdUpdateAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
+        public async Task CmdUpdateAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
             // determine ID to set, if null means failed (message will be sent automatically
-            uint? nextID = await GetNextIdAsync(context, userInput, cancellationToken).ConfigureAwait(false);
+            uint? nextID = await this.GetNextIdAsync(context, userInput, cancellationToken).ConfigureAwait(false);
             if (nextID == null)
                 return;
 
             // start interactive session with AP to update
-            await context.ReplyTextAsync(_nextGameOptions.AutoPostBotRemoveCommand, cancellationToken).ConfigureAwait(false);
-            ChatMessage botResponse = await context.Client.AwaitNextGroupByUserAsync(_nextGameOptions.AutoPostBotID, context.Message.RecipientID, TimeSpan.FromSeconds(_nextGameOptions.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync(this._nextGameOptions.AutoPostBotRemoveCommand, cancellationToken).ConfigureAwait(false);
+            ChatMessage botResponse = await context.Client.AwaitNextGroupByUserAsync(this._nextGameOptions.AutoPostBotID, context.Message.RecipientID, TimeSpan.FromSeconds(this._nextGameOptions.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
             if (botResponse == null)
-                await context.ReplyTextAsync($"(n) AP didn't respond within {_nextGameOptions.AutoPostBotWaitSeconds} seconds.");
+                await context.ReplyTextAsync($"(n) AP didn't respond within {this._nextGameOptions.AutoPostBotWaitSeconds} seconds.");
             else
-                await context.ReplyTextAsync(BotInteractionUtilities.GetAutopostBotAddCommand(_nextGameOptions, nextID), cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(BotInteractionUtilities.GetAutopostBotAddCommand(this._nextGameOptions, nextID), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
+            await this.SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
         }
 
         [RegexCommand(@"^next\scontinue(?:\s(\S+))?")]
         [Priority(-10)]
         [GroupOnly]
-        private async Task CmdContinueAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
+        public async Task CmdContinueAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
             // try user input first
             string rawNextID;
@@ -66,11 +66,11 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             // if user did not provide ID, start interactive session with AP
             else
             {
-                await context.ReplyTextAsync(_nextGameOptions.AutoPostBotPostCommand, cancellationToken).ConfigureAwait(false);
-                ChatMessage botResponse = await context.Client.AwaitNextGroupByUserAsync(_nextGameOptions.AutoPostBotID, context.Message.RecipientID, TimeSpan.FromSeconds(_nextGameOptions.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(this._nextGameOptions.AutoPostBotPostCommand, cancellationToken).ConfigureAwait(false);
+                ChatMessage botResponse = await context.Client.AwaitNextGroupByUserAsync(this._nextGameOptions.AutoPostBotID, context.Message.RecipientID, TimeSpan.FromSeconds(this._nextGameOptions.AutoPostBotWaitSeconds), cancellationToken).ConfigureAwait(false);
                 if (botResponse == null)
                 {
-                    await context.ReplyTextAsync($"(n) AP didn't respond within {_nextGameOptions.AutoPostBotWaitSeconds} seconds.");
+                    await context.ReplyTextAsync($"(n) AP didn't respond within {this._nextGameOptions.AutoPostBotWaitSeconds} seconds.");
                     return;
                 }
                 rawNextID = botResponse.Text;
@@ -87,15 +87,15 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             await context.ReplyTextAsync(BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions, nextID), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID, cancellationToken).ConfigureAwait(false);
+            await this.SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID, cancellationToken).ConfigureAwait(false);
         }
 
         [RegexCommand(@"^next(?:\s(\S+))?")]
         [Priority(-12)]
         [GroupOnly]
-        private async Task CmdNextAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
+        public async Task CmdNextAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
-            uint? nextID = await GetNextIdAsync(context, userInput, cancellationToken).ConfigureAwait(false);
+            uint? nextID = await this.GetNextIdAsync(context, userInput, cancellationToken).ConfigureAwait(false);
             if (nextID == null)
                 return;
 
@@ -103,7 +103,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
             await context.ReplyTextAsync(BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions, nextID.Value), cancellationToken).ConfigureAwait(false);
 
             // update config and save in DB
-            await SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
+            await this.SaveGroupConfigAsync(context.Client, context.Message.RecipientID, nextID.Value, cancellationToken).ConfigureAwait(false);
         }
 
         #region Helpers
@@ -111,7 +111,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
         {
             try
             {
-                GroupConfig groupConfig = await _groupConfigStore.GetGroupConfigAsync(groupID, cancellationToken).ConfigureAwait(false);
+                GroupConfig groupConfig = await this._groupConfigStore.GetGroupConfigAsync(groupID, cancellationToken).ConfigureAwait(false);
                 groupConfig.CurrentGuesswhatGameID = currentID;
                 await _groupConfigStore.SetGroupConfigAsync(groupConfig, false, cancellationToken).ConfigureAwait(false);
                 return true;
@@ -127,7 +127,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
         {
             if (string.IsNullOrWhiteSpace(userInput))
             {
-                GroupConfig groupConfig = await _groupConfigStore.GetGroupConfigAsync(context.Message.RecipientID, cancellationToken).ConfigureAwait(false);
+                GroupConfig groupConfig = await this._groupConfigStore.GetGroupConfigAsync(context.Message.RecipientID, cancellationToken).ConfigureAwait(false);
                 if (groupConfig == null || groupConfig.CurrentGuesswhatGameID == null)
                 {
                     await context.ReplyTextAsync("(n) I do not know the next GW game ID for this group.\r\n" +
@@ -135,7 +135,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
                     return null;
                 }
                 else
-                    return GetNextExistingID(groupConfig.CurrentGuesswhatGameID.Value);
+                    return this.GetNextExistingID(groupConfig.CurrentGuesswhatGameID.Value);
             }
             if (!uint.TryParse(userInput, out uint nextID))
             {
@@ -147,7 +147,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.NextGameUtility
 
         private uint GetNextExistingID(uint currentID)
         {
-            uint[] knownIDs = _nextGameOptions.KnownGuesswhatIDs;
+            uint[] knownIDs = this._nextGameOptions.KnownGuesswhatIDs;
 
             // if no known IDs, return +1
             if (knownIDs == null || knownIDs.Length == 0)
