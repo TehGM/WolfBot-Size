@@ -29,23 +29,31 @@ Bot version: v{GetVersion()}
 Copyright © 2020 TehGM",  // due to AGPL licensing, this line cannot be changed or removed, unless by the original author
 cancellationToken);
 
+
+        private static string _version;
+
         private static string GetVersion()
         {
-            FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(typeof(HelpHandler).Assembly.Location);
-            if (!string.IsNullOrWhiteSpace(versionInfo.ProductVersion))
+            if (_version == null)
             {
-                string version = Assembly.GetExecutingAssembly()
-                        .GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-                int hashIndex = version.IndexOf('+');
-                if (hashIndex > 0)
-                    version = version.Substring(0, hashIndex);
-                return version;
+                FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(typeof(HelpHandler).Assembly.Location);
+                if (!string.IsNullOrWhiteSpace(versionInfo.ProductVersion))
+                {
+                    string version = versionInfo.ProductVersion;
+                    int hashIndex = version.IndexOf('+');
+                    if (hashIndex > 0)
+                        version = version.Substring(0, hashIndex);
+                    _version = version;
+                }
+                else
+                {
+                    string result = $"{versionInfo.FileMajorPart}.{versionInfo.FileMinorPart}.{versionInfo.FileBuildPart}";
+                    if (versionInfo.FilePrivatePart != 0)
+                        result += $".{versionInfo.FilePrivatePart}";
+                    _version = result;
+                }
             }
-
-            string result = $"{versionInfo.FileMajorPart}.{versionInfo.FileMinorPart}.{versionInfo.FileBuildPart}";
-            if (versionInfo.FilePrivatePart != 0)
-                result += $".{versionInfo.FilePrivatePart}";
-            return result;
+            return _version;
         }
     }
 }
