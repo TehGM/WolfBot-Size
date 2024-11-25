@@ -35,7 +35,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
         [Command("join")]
         [RequireBotAdmin]
-        private async Task CmdJoinAsync(CommandContext context, [MissingError("(n) Please provide group name.")] string groupName, CancellationToken cancellationToken = default)
+        private async Task CmdJoinAsync(CommandContext context, [MissingError("(n) Please provide group name.")] [ArgumentsText] string groupName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {
@@ -59,7 +59,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
         [Command("leave")]
         [RequireBotAdmin]
-        private async Task CmdLeaveAsync(CommandContext context, string groupName = null, CancellationToken cancellationToken = default)
+        private async Task CmdLeaveAsync(CommandContext context, [ArgumentsText] string groupName = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {
