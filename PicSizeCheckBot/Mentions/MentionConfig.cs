@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using TehGM.WolfBots.PicSizeCheckBot.Mentions.Filters;
 
 namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
 {
@@ -10,10 +10,13 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
         [BsonId]
         public uint ID { get; }
 
-        public string MessageTemplate { get; set; }
-        public bool IgnoreSelf { get; set; } = true;
+        [BsonElement("MessageTemplate"), BsonIgnoreIfNull]
+        public string MessageTemplate { get; init; }
 
+        [BsonElement("Patterns")]
         public ICollection<MentionPattern> Patterns { get; set; }
+        [BsonElement("GlobalFilters")]
+        public ICollection<IMentionFilter> GlobalFilters { get; set; }
 
         [BsonConstructor(nameof(ID))]
         public MentionConfig(uint userID)

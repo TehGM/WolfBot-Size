@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.WolfBots.PicSizeCheckBot.Database;
+using TehGM.WolfBots.PicSizeCheckBot.Mentions.Filters;
 using TehGM.WolfBots.PicSizeCheckBot.Options;
 using TehGM.Wolfringo;
 using TehGM.Wolfringo.Messages;
@@ -38,7 +39,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
             this._environment = environment;
 
             // add client listeners
-            this._client.AddMessageListener<ChatMessage>(OnChatMessage);
+            this._client.AddMessageListener<ChatMessage>(this.OnChatMessage);
         }
 
         private async void OnChatMessage(ChatMessage message)
@@ -49,6 +50,9 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
             if (!_environment.IsProduction() &&
                 !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
                 (message.IsPrivateMessage && message.SenderID == _botOptions.CurrentValue.OwnerID)))
+                return;
+
+            if (this._client.CurrentUserID != null && message.SenderID.Value == this._client.CurrentUserID.Value)
                 return;
 
             try
@@ -67,21 +71,50 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
                 IEnumerable<MentionConfig> allMentions = await _mentionConfigStore.GetAllAsync(cancellationToken).ConfigureAwait(false);
                 if (allMentions?.Any() == true)
                 {
+                    uint senderID = message.SenderID.Value;
+                    uint groupID = message.RecipientID;
+
                     foreach (MentionConfig mentionConfig in allMentions)
                     {
-                        if (!mentionConfig.Patterns.Any(pattern => pattern.Regex.IsMatch(message.Text)))
-                            continue;
-                        if (mentionConfig.IgnoreSelf && mentionConfig.ID == message.SenderID.Value)
+                        if (mentionConfig.ID == senderID)
                             continue;
 
-                        string text = await BuildMentionMessage(message, mentionConfig, cancellationToken).ConfigureAwait(false);
-                        await _client.SendPrivateTextMessageAsync(mentionConfig.ID, text, cancellationToken).ConfigureAwait(false);
+                        if (await this.AnyFilterBlocksAsync(message, mentionConfig.GlobalFilters, cancellationToken).ConfigureAwait(false))
+                            continue;
+
+                        foreach (MentionPattern pattern in mentionConfig.Patterns ?? Enumerable.Empty<MentionPattern>())
+                        {
+                            if (await this.AnyFilterBlocksAsync(message, pattern.Filters, cancellationToken).ConfigureAwait(false))
+                                continue;
+
+                            if (!pattern.IsMatch(message.Text))
+                                continue;
+
+                            string text = await this.BuildMentionMessage(message, mentionConfig, cancellationToken).ConfigureAwait(false);
+                            await this._client.SendPrivateTextMessageAsync(mentionConfig.ID, text, cancellationToken).ConfigureAwait(false);
+                            break;
+                        }
                     }
                 }
             }
             catch (TaskCanceledException) { }
             catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendMessage) { }
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
+        }
+
+        private async ValueTask<bool> AnyFilterBlocksAsync(ChatMessage message, IEnumerable<IMentionFilter> filters, CancellationToken cancellationToken)
+        {
+            if (filters == null)
+                return false;
+
+            foreach (IMentionFilter filter in filters)
+            {
+                bool pass = await filter.PassesAsync(message, this._client, cancellationToken).ConfigureAwait(false);
+                if (!pass)
+                    return true;
+            }
+
+            return false;
         }
 
         private async Task<string> BuildMentionMessage(ChatMessage message, MentionConfig config, CancellationToken cancellationToken = default)
@@ -120,7 +153,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
 
         public void Dispose()
         {
-            this._client?.RemoveMessageListener<ChatMessage>(OnChatMessage);
+            this._client?.RemoveMessageListener<ChatMessage>(this.OnChatMessage);
             try { this._cts?.Cancel(); } catch { }
             try { this._cts?.Dispose(); } catch { }
         }
