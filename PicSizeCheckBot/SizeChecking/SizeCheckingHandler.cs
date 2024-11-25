@@ -54,7 +54,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             this._cts = new CancellationTokenSource();
 
             // add client listeners
-            this._client.AddMessageListener<ChatMessage>(OnChatMessage);
+            this._client.AddMessageListener<ChatMessage>(this.OnChatMessage);
 
             // read options
             this.OnPicSizeOptionsReload(picSizeOptions.CurrentValue);
@@ -69,18 +69,18 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         private async void OnChatMessage(ChatMessage message)
         {
             // run only in prod, test group or owner PM
-            if (!_environment.IsProduction() &&
+            if (!this._environment.IsProduction() &&
                 !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
                 (message.IsPrivateMessage && message.SenderID == _botOptions.CurrentValue.OwnerID)))
                 return;
 
             CommandContext context = new CommandContext(message, this._client, this._commandsOptions.CurrentValue);
-            using IDisposable logScope = _log.BeginCommandScope(context, this);
+            using IDisposable logScope = this._log.BeginCommandScope(context, this);
             try
             {
                 if (message.MimeType == ChatMessageTypes.ImageLink)
                 {
-                    await HandleImageCheckRequestAsync(context, message.Text, false, this._cts.Token).ConfigureAwait(false);
+                    await this.HandleImageCheckRequestAsync(context, message.Text, false, this._cts.Token).ConfigureAwait(false);
                     return;
                 }
             }
@@ -92,7 +92,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         #region Configuration
         [RegexCommand(@"^listen(?:\s(\S*))?(?:\s(\S*)\b)?")]
         [GroupOnly]
-        private async Task CmdListenAsync(CommandContext context, Match regexMatch, CancellationToken cancellationToken = default)
+        public async Task CmdListenAsync(CommandContext context, Match regexMatch, CancellationToken cancellationToken = default)
         {
             // check user is admin or owner
             string mode = regexMatch.Groups[1]?.Value?.ToLowerInvariant();
@@ -116,7 +116,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             }
 
             // get config
-            GroupConfig config = await GetConfigAsync<GroupConfig>(context.Message, cancellationToken).ConfigureAwait(false);
+            GroupConfig config = await this.GetConfigAsync<GroupConfig>(context.Message, cancellationToken).ConfigureAwait(false);
 
             // change settings based on mode
             switch (mode)
@@ -164,16 +164,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             }
 
             // save settings
-            await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
+            await this.SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
         }
 
         [RegexCommand(@"^(enable|disable)\b")]
         [GroupOnly]
         [RequireGroupAdmin]
-        private async Task CmdEnableDisableAsync(CommandContext context, Match regexMatch, CancellationToken cancellationToken = default)
+        public async Task CmdEnableDisableAsync(CommandContext context, Match regexMatch, CancellationToken cancellationToken = default)
         {
             // get config
-            GroupConfig config = await GetConfigAsync<GroupConfig>(context.Message, cancellationToken).ConfigureAwait(false);
+            GroupConfig config = await this.GetConfigAsync<GroupConfig>(context.Message, cancellationToken).ConfigureAwait(false);
 
             // update setting
             switch (regexMatch.Groups[1].Value.ToLowerInvariant())
@@ -185,12 +185,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                     config.IsEnabled = false;
                     break;
             }
-            await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
+            await this.SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
             await context.ReplyTextAsync($"/me Automatic size checking in this group has been {(config.IsEnabled ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
         }
 
         [RegexCommand(@"^posturl(?:\s(\S*)\b)?")]
-        private async Task CmdPostUrlAsync(CommandContext context, Match regexMatch, CancellationToken cancellationToken = default)
+        public async Task CmdPostUrlAsync(CommandContext context, Match regexMatch, CancellationToken cancellationToken = default)
         {
             // if is group, ensure user is admin or owner
             if (context.IsGroup)
@@ -218,27 +218,27 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             }
 
             // get and update config
-            ITargetConfig config = await GetConfigAsync<ITargetConfig>(context.Message, cancellationToken).ConfigureAwait(false);
+            ITargetConfig config = await this.GetConfigAsync<ITargetConfig>(context.Message, cancellationToken).ConfigureAwait(false);
             config.PostImageURL = GetSwitchedValue(config.PostImageURL, settingSwitch);
-            await SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
+            await this.SaveConfigAsync(config, cancellationToken).ConfigureAwait(false);
             await context.ReplyTextAsync($"/me Posting image URLs {(config.PostImageURL ? "enabled" : "disabled")}.", cancellationToken).ConfigureAwait(false);
         }
 
         [Command("check")]
-        private async Task CmdCheckAsync(CommandContext context, [MissingError("Please provide picture URL.")] string imageUrl, CancellationToken cancellationToken = default)
+        public async Task CmdCheckAsync(CommandContext context, [MissingError("Please provide picture URL.")] string imageUrl, CancellationToken cancellationToken = default)
         {
-            if (!_urlMatchingRegex.IsMatch(imageUrl))
+            if (!this._urlMatchingRegex.IsMatch(imageUrl))
                 await context.ReplyTextAsync($"/alert Invalid URL: {imageUrl}", cancellationToken).ConfigureAwait(false);
             else
-                await HandleImageCheckRequestAsync(context, imageUrl, true, cancellationToken).ConfigureAwait(false);
+                await this.HandleImageCheckRequestAsync(context, imageUrl, true, cancellationToken).ConfigureAwait(false);
         }
         #endregion
 
         #region Checking Image Size
         private async Task HandleImageCheckRequestAsync(CommandContext context, string imageUrl, bool isExplicitRequest, CancellationToken cancellationToken = default)
         {
-            ITargetConfig config = await GetConfigAsync<ITargetConfig>(context.Message, cancellationToken).ConfigureAwait(false);
-            if (!isExplicitRequest && !await CheckShouldCheckSizeAsync(context, config, cancellationToken).ConfigureAwait(false))
+            ITargetConfig config = await this.GetConfigAsync<ITargetConfig>(context.Message, cancellationToken).ConfigureAwait(false);
+            if (!isExplicitRequest && !await this.CheckShouldCheckSizeAsync(context, config, cancellationToken).ConfigureAwait(false))
                 return;
 
             using IDisposable logScope = _log.BeginScope(new Dictionary<string, object>()
@@ -252,7 +252,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             Image img = null;
             try
             {
-                img = await DownloadImageAsync(imageUrl, cancellationToken).ConfigureAwait(false);
+                img = await this.DownloadImageAsync(imageUrl, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex.LogAsError(this._log, "Failed downloading image {ImageURL}", imageUrl))
             {
@@ -261,7 +261,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
             }
 
             _log.LogTrace("Verifying image size");
-            PictureSize size = Verify(img.Size);
+            PictureSize size = this.Verify(img.Size);
             _log.LogTrace("Image size: {ImageSize}", size);
 
             // build message
@@ -276,7 +276,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 
         private async ValueTask<bool> CheckShouldCheckSizeAsync(CommandContext context, ITargetConfig config, CancellationToken cancellationToken = default)
         {
-            _log.LogTrace("Determining if should check the image size");
+            this._log.LogTrace("Determining if should check the image size");
             if (config is GroupConfig groupConfig)
             {
                 // if disabled for all, can return early
@@ -325,7 +325,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         private static string BoolToOnOff(bool value)
             => value ? "on" : "off";
 
-        private SettingSwitch ParseSettingSwitch(string value)
+        private static SettingSwitch ParseSettingSwitch(string value)
         {
             if (value == null)
                 return SettingSwitch.Toggle;
@@ -358,22 +358,22 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         private async Task<T> GetConfigAsync<T>(ChatMessage message, CancellationToken cancellationToken = default) where T : class, ITargetConfig
         {
             if (message.IsGroupMessage)
-                return await _groupConfigStore.GetGroupConfigAsync(message.RecipientID, cancellationToken).ConfigureAwait(false) as T;
+                return await this._groupConfigStore.GetGroupConfigAsync(message.RecipientID, cancellationToken).ConfigureAwait(false) as T;
             else
-                return await _userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false) as T;
+                return await this._userDataStore.GetUserDataAsync(message.SenderID.Value, cancellationToken).ConfigureAwait(false) as T;
         }
 
         private Task SaveConfigAsync(ITargetConfig config, CancellationToken cancellationToken = default)
         {
             if (config is GroupConfig groupConfig)
-                return _groupConfigStore.SetGroupConfigAsync(groupConfig, cancellationToken);
+                return this._groupConfigStore.SetGroupConfigAsync(groupConfig, cancellationToken);
             else if (config is UserData userData)
-                return _userDataStore.SetUserDataAsync(userData, cancellationToken);
+                return this._userDataStore.SetUserDataAsync(userData, cancellationToken);
             return Task.CompletedTask;
         }
         #endregion
 
-        private async Task<WolfGroupMember> GetGroupMemberAsync(CommandContext context, CancellationToken cancellationToken = default)
+        private static async Task<WolfGroupMember> GetGroupMemberAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
             WolfGroup group = await context.GetRecipientAsync<WolfGroup>(cancellationToken).ConfigureAwait(false);
             if (group == null)
@@ -395,7 +395,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
         {
             _log.LogDebug("Downloading image from {ImageURL}", imageUrl);
             HttpClient client = _httpClientFactory.CreateClient();
-            using Stream imageStream = await client.GetStreamAsync(imageUrl).ConfigureAwait(false);
+            using Stream imageStream = await client.GetStreamAsync(imageUrl, cancellationToken).ConfigureAwait(false);
             using MemoryStream memoryStream = new MemoryStream();
             await imageStream.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
             return Image.FromStream(memoryStream);
@@ -405,7 +405,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
 
         public void Dispose()
         {
-            this._client?.RemoveMessageListener<ChatMessage>(OnChatMessage);
+            this._client?.RemoveMessageListener<ChatMessage>(this.OnChatMessage);
             try { this._cts?.Cancel(); } catch { }
             try { this._cts?.Dispose(); } catch { }
         }

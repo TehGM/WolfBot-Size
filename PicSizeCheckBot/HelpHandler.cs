@@ -13,7 +13,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
     {
         [Command("help")]
         [Priority(-99999)]
-        private Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
+        public Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
             => context.ReplyTextAsync(
 @$"I will post size of images posted in this group. 
 I can also store your notes and ID queues.

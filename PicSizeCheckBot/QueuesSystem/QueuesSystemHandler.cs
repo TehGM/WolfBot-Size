@@ -43,7 +43,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.QueuesSystem
         [RegexCommand("^queues? help")]
         [Command("queues help")]
         [Hidden]
-        private async Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
+        public async Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
             WolfUser owner = await context.Client.GetUserAsync(_botOptions.OwnerID, cancellationToken).ConfigureAwait(false);
 
@@ -70,13 +70,13 @@ cancellationToken).ConfigureAwait(false);
         [Summary("pulls the next ID from <queue name>")]
         [Priority(-30)]
         [GroupOnly]
-        private async Task CmdNextAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
+        public async Task CmdNextAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
         {
             // get queue and ensure not empty
-            IdQueue queue = await GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
-            if (!queue.QueuedIDs.Any())
+            if (queue.QueuedIDs.Count == 0)
             {
                 await context.ReplyTextAsync($"Queue {queue.Name} is empty.", cancellationToken).ConfigureAwait(false);
                 return;
@@ -84,7 +84,7 @@ cancellationToken).ConfigureAwait(false);
 
             uint gameID = queue.QueuedIDs.Dequeue();
             await context.ReplyTextAsync(BotInteractionUtilities.GetSubmissionBotShowCommand(_botOptions, gameID), cancellationToken).ConfigureAwait(false);
-            await SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
+            await this.SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* ADD */
@@ -92,15 +92,15 @@ cancellationToken).ConfigureAwait(false);
         [DisplayName("<queue name> queue add <ids>")]
         [Summary("adds IDs")]
         [Priority(-32)]
-        private async Task CmdAddAsync(CommandContext context, string queueName,
+        public async Task CmdAddAsync(CommandContext context, string queueName,
             [MissingError("(n) Please provide IDs to add.")] string args, CancellationToken cancellationToken = default)
         {
-            IdQueue queue = await GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
             // perform adding
-            (HashSet<uint> ids, HashSet<string> needsRevisit) = GetIDsFromArgs(args);
+            (HashSet<uint> ids, HashSet<string> needsRevisit) = this.GetIDsFromArgs(args);
             int addedCount = 0;
             int skippedCount = 0;
             foreach (uint i in ids)
@@ -127,7 +127,7 @@ cancellationToken).ConfigureAwait(false);
 
             // send response
             await context.ReplyTextAsync(builder.ToString(), cancellationToken).ConfigureAwait(false);
-            await SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
+            await this.SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* SHOW */
@@ -135,9 +135,9 @@ cancellationToken).ConfigureAwait(false);
         [DisplayName("<queue name> queue show")]
         [Summary("shows all IDs")]
         [Priority(-31)]
-        private async Task CmdShowAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
+        public async Task CmdShowAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
         {
-            IdQueue queue = await GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
@@ -148,7 +148,7 @@ cancellationToken).ConfigureAwait(false);
             }
 
             bool plural = queue.QueuedIDs.Count > 1;
-            await context.ReplyTextAsync($"Currently there {(plural ? "are" : "is")} {queue.QueuedIDs.Count} ID{(plural ? "s" : "")} on {queue.Name} queue:\r\n{string.Join(", ", queue.QueuedIDs)}");
+            await context.ReplyTextAsync($"Currently there {(plural ? "are" : "is")} {queue.QueuedIDs.Count} ID{(plural ? "s" : "")} on {queue.Name} queue:\r\n{string.Join(", ", queue.QueuedIDs)}", cancellationToken);
         }
 
         /* REMOVE */
@@ -156,22 +156,22 @@ cancellationToken).ConfigureAwait(false);
         [DisplayName("<queue name> queue remove <ids>")]
         [Summary("removes selected IDs")]
         [Priority(-31)]
-        private async Task CmdRemoveAsync(CommandContext context, string queueName,
+        public async Task CmdRemoveAsync(CommandContext context, string queueName,
             [MissingError("(n) Please provide IDs to remove.")] string args, CancellationToken cancellationToken = default)
         {
-            IdQueue queue = await GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue, or user is bot admin
-            if (!await IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
+            if (!await this.IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
                 await context.ReplyTextAsync("(n) To remove from a queue, you need to be its owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // perform removing
-            (HashSet<uint> ids, HashSet<string> needsRevisit) = GetIDsFromArgs(args);
+            (HashSet<uint> ids, HashSet<string> needsRevisit) = this.GetIDsFromArgs(args);
             int previousCount = queue.QueuedIDs.Count;
             queue.QueuedIDs = new Queue<uint>(queue.QueuedIDs.Where(i => !ids.Contains(i)));
 
@@ -189,7 +189,7 @@ cancellationToken).ConfigureAwait(false);
 
             // send response
             await context.ReplyTextAsync(builder.ToString(), cancellationToken).ConfigureAwait(false);
-            await SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
+            await this.SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* CLEAR */
@@ -197,14 +197,14 @@ cancellationToken).ConfigureAwait(false);
         [DisplayName("<queue name> queue clear")]
         [Summary("removes all IDs")]
         [Priority(-31)]
-        private async Task CmdClearAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
+        public async Task CmdClearAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
         {
-            IdQueue queue = await GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue, or user is bot admin
-            if (!await IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
+            if (!await this.IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
                 await context.ReplyTextAsync("(n) To clear a queue, you need to be its owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
@@ -213,7 +213,7 @@ cancellationToken).ConfigureAwait(false);
             int idCount = queue.QueuedIDs.Count;
             queue.QueuedIDs.Clear();
             await context.ReplyTextAsync($"(y) {idCount} ID{(idCount > 1 ? "s" : "")} removed from queue \"{queue.Name}\" .", cancellationToken).ConfigureAwait(false);
-            await SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
+            await this.SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
         }
 
         /* RENAME */
@@ -221,22 +221,22 @@ cancellationToken).ConfigureAwait(false);
         [DisplayName("<queue name> rename <new name>")]
         [Summary("changes name")]
         [Priority(-31)]
-        private async Task CmdRenameAsync(CommandContext context, string queueName, string args = null, CancellationToken cancellationToken = default)
+        public async Task CmdRenameAsync(CommandContext context, string queueName, string args = null, CancellationToken cancellationToken = default)
         {
             string newName = args?.Trim();
             // check forbidden name
-            if (IsQueueNameForbidden(newName))
+            if (this.IsQueueNameForbidden(newName))
             {
                 await context.ReplyTextAsync($"(n) Queue name \"{newName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            IdQueue queue = await GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue, or user is bot admin
-            if (!await IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
+            if (!await this.IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
                 await context.ReplyTextAsync("(n) To rename a queue, you need to be its owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                     return;
@@ -258,7 +258,7 @@ cancellationToken).ConfigureAwait(false);
             }
 
             queue.Name = newName;
-            await SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
+            await this.SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
             _idQueueStore.FlushBatch();
             await context.ReplyTextAsync($"(y) Queue renamed to \"{newName}\".", cancellationToken).ConfigureAwait(false);
         }
@@ -268,15 +268,15 @@ cancellationToken).ConfigureAwait(false);
         [DisplayName("<queue name> queue transfer <user id>")]
         [Summary("transfers ownership of the queue")]
         [Priority(-31)]
-        private async Task CmdTransferAsync(CommandContext context, string queueName, 
+        public async Task CmdTransferAsync(CommandContext context, string queueName, 
             [MissingError("(n) Please provide ID of the user to transfer the queue to.")][ConvertingError("(n) `{{Arg}}` is not a valid user ID.")] uint newOwnerID, CancellationToken cancellationToken = default)
         {
-            IdQueue queue = await GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetOrCreateQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
                 return;         // if null, it means it's a forbidden name
 
             // check if this is owner's queue, or user is bot admin
-            if (queue.OwnerID != null && !await IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
+            if (queue.OwnerID != null && !await this.IsQueueOwnerOrBotAdmin(queue, context.Message.SenderID.Value, cancellationToken).ConfigureAwait(false))
             {
                 await context.ReplyTextAsync("(n) To transfer a queue, you need to be it's owner or a bot admin.", cancellationToken).ConfigureAwait(false);
                 return;
@@ -297,7 +297,7 @@ cancellationToken).ConfigureAwait(false);
             }
 
             queue.OwnerID = user.ID;
-            await SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
+            await this.SaveQueueAsync(context, queue, cancellationToken).ConfigureAwait(false);
             _idQueueStore.FlushBatch();
             await context.ReplyTextAsync($"(y) Queue `{queue.Name}` transferred to {user.Nickname}.", cancellationToken).ConfigureAwait(false);
         }
@@ -307,9 +307,9 @@ cancellationToken).ConfigureAwait(false);
         [DisplayName("<queue name> info")]
         [Summary("shows info about the queue")]
         [Priority(-31)]
-        private async Task CmdInfoAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
+        public async Task CmdInfoAsync(CommandContext context, string queueName, CancellationToken cancellationToken = default)
         {
-            IdQueue queue = await GetQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
+            IdQueue queue = await this.GetQueueAsync(context, queueName, cancellationToken).ConfigureAwait(false);
             if (queue == null)
             {
                 if (queueName.Equals("my", StringComparison.OrdinalIgnoreCase))
@@ -383,7 +383,7 @@ cancellationToken).ConfigureAwait(false);
         private async Task<IdQueue> GetOrCreateQueueAsync(CommandContext context, string name, CancellationToken cancellationToken = default)
         {
             // first try to get existing queue
-            IdQueue result = await GetQueueAsync(context, name, cancellationToken).ConfigureAwait(false);
+            IdQueue result = await this.GetQueueAsync(context, name, cancellationToken).ConfigureAwait(false);
             if (result != null)
                 return result;
 
@@ -398,7 +398,7 @@ cancellationToken).ConfigureAwait(false);
             }
 
             // check forbidden name
-            if (IsQueueNameForbidden(queueName))
+            if (this.IsQueueNameForbidden(queueName))
             {
                 await context.ReplyTextAsync($"(n) Queue name \"{queueName}\" is invalid or forbidden.", cancellationToken).ConfigureAwait(false);
                 return null;
@@ -434,9 +434,9 @@ cancellationToken).ConfigureAwait(false);
             try
             {
                 if (name.Equals("my", StringComparison.OrdinalIgnoreCase))
-                    return await _idQueueStore.GetIdQueueByOwnerAsync(context.Message.SenderID.Value, cancellationToken);
+                    return await this._idQueueStore.GetIdQueueByOwnerAsync(context.Message.SenderID.Value, cancellationToken);
                 else
-                    return await _idQueueStore.GetIdQueueByNameAsync(name, cancellationToken);
+                    return await this._idQueueStore.GetIdQueueByNameAsync(name, cancellationToken);
             }
             catch (Exception)
             {
@@ -446,7 +446,7 @@ cancellationToken).ConfigureAwait(false);
         }
 
         private bool IsQueueNameForbidden(string queueName)
-            => string.IsNullOrWhiteSpace(queueName) || _queuesOptions.ForbiddenQueueNames.Contains(queueName);
+            => string.IsNullOrWhiteSpace(queueName) || this._queuesOptions.ForbiddenQueueNames.Contains(queueName);
         #endregion
     }
 }

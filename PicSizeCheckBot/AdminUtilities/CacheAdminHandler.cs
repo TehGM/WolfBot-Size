@@ -47,12 +47,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
         [Command("cache clear")]
         [RequireBotAdmin]
-        private async Task CmdCacheClear(CommandContext context, CancellationToken cancellationToken = default)
+        public async Task CmdCacheClear(CommandContext context, CancellationToken cancellationToken = default)
         {
             // flush all batches first to prevent data loss
-            _groupConfigStore.FlushBatch();
-            _idQueueStore.FlushBatch();
-            _userDataStore.FlushBatch();
+            this._groupConfigStore.FlushBatch();
+            this._idQueueStore.FlushBatch();
+            this._userDataStore.FlushBatch();
 
             // get current counts for reporting
             int userDataCacheCount = _userDataCache.CachedCount;
@@ -61,10 +61,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
             int mentionConfigCacheCount = _mentionConfigCache.CachedCount;
 
             // clear caches
-            _userDataCache.Clear();
-            _groupConfigCache.Clear();
-            _idQueueCache.Clear();
-            _mentionConfigCache.Clear();
+            this._userDataCache.Clear();
+            this._groupConfigCache.Clear();
+            this._idQueueCache.Clear();
+            this._mentionConfigCache.Clear();
 
             // reply to user
             await context.ReplyTextAsync("(y) Database caches cleared:\r\n" +
@@ -83,7 +83,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
                     { "IdQueueCacheCount", idQueueCacheCount },
                     { "MentionConfigCacheCount", mentionConfigCacheCount }
                 });
-            _log.LogInformation("All database caches cleared by {UserID} ({UserNickname})", user.ID, user.Nickname);
+            this._log.LogInformation("All database caches cleared by {UserID} ({UserNickname})", user.ID, user.Nickname);
         }
     }
 }

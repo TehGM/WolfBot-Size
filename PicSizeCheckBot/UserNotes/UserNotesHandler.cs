@@ -34,7 +34,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.UserNotes
         #region Commands
         /* HELP */
         [Command("notes help")]
-        private async Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
+        public async Task CmdHelpAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
             WolfUser owner = await context.Client.GetUserAsync(_botOptions.OwnerID, cancellationToken).ConfigureAwait(false);
             await context.ReplyTextAsync(string.Format(@"Notes commands:
@@ -52,7 +52,7 @@ cancellationToken).ConfigureAwait(false);
         /* GET */
         [RegexCommand(@"^notes?(?:\s(.+))?")]
         [Priority(-41)]
-        private async Task CmdGetAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
+        public async Task CmdGetAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
             // if no ID provided, get all
             if (string.IsNullOrWhiteSpace(userInput))
@@ -65,8 +65,8 @@ cancellationToken).ConfigureAwait(false);
                 }
 
                 // concat all
-                int maxMsgLength = _notesOptions.MaxMessageLength;
-                int maxNoteLength = _notesOptions.MaxLengthPerBulkNote;
+                int maxMsgLength = this._notesOptions.MaxMessageLength;
+                int maxNoteLength = this._notesOptions.MaxLengthPerBulkNote;
                 List<string> entries = new List<string>(data.Notes.Select(pair => $"{pair.Key}: {pair.Value}"));
                 // keep list of entries, so can remove last one if adding "not all fit message" requires that
                 List<string> includedEntries = new List<string>(data.Notes.Count);
@@ -121,7 +121,7 @@ cancellationToken).ConfigureAwait(false);
         
         /* ADD */
         [RegexCommand(@"^notes?\sadd(?:\s(.+))?")]
-        private async Task CmdAddAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
+        public async Task CmdAddAsync(CommandContext context, string userInput = null, CancellationToken cancellationToken = default)
         {
             // validate not empty
             string note = userInput.Trim();
@@ -132,16 +132,16 @@ cancellationToken).ConfigureAwait(false);
             }
 
             // validate not too long
-            if (note.Length > _notesOptions.MaxNoteLength)
+            if (note.Length > this._notesOptions.MaxNoteLength)
             {
-                await context.ReplyTextAsync($"(n) User notes can have maximum {_notesOptions.MaxNoteLength} characters. Your note has {note.Length} characters.", cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync($"(n) User notes can have maximum {this._notesOptions.MaxNoteLength} characters. Your note has {note.Length} characters.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             // validate not at max already and get next free ID slot at once
-            UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
+            UserData data = await this.GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
             uint id = default;
-            for (uint i = 1; i <= _notesOptions.MaxNotesCount; i++)
+            for (uint i = 1; i <= this._notesOptions.MaxNotesCount; i++)
             {
                 if (!data.Notes.ContainsKey(i))
                 {
@@ -150,7 +150,7 @@ cancellationToken).ConfigureAwait(false);
                 }
                 if (i == _notesOptions.MaxNotesCount)
                 {
-                    await context.ReplyTextAsync($"(n) You reached limit of {_notesOptions.MaxNotesCount} notes per user.", cancellationToken).ConfigureAwait(false);
+                    await context.ReplyTextAsync($"(n) You reached limit of {this._notesOptions.MaxNotesCount} notes per user.", cancellationToken).ConfigureAwait(false);
                     return;
                 }
             }
@@ -158,16 +158,16 @@ cancellationToken).ConfigureAwait(false);
             // insert note and save data
             data.Notes.Add(id, note);
             await context.ReplyTextAsync($"(y) Your note added at position {id}.", cancellationToken).ConfigureAwait(false);
-            await SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
+            await this.SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
         }
 
 
         /* REMOVE */
         [RegexCommand(@"^notes?\s(?:del|delete|remove)(?:\s(.+))?")]
-        private async Task CmdRemoveAsync(CommandContext context,
+        public async Task CmdRemoveAsync(CommandContext context,
              [MissingError("(n) Please provide a valid note ID.")] [ConvertingError("(n) `{{Arg}}` is not a valid note ID.")] uint noteID, CancellationToken cancellationToken = default)
         {
-            UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
+            UserData data = await this.GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
             if (!data.Notes.Remove(noteID))
             {
                 await context.ReplyTextAsync($"(n) You don't have a note with ID {noteID}.", cancellationToken).ConfigureAwait(false);
@@ -175,20 +175,20 @@ cancellationToken).ConfigureAwait(false);
             }
 
             await context.ReplyTextAsync($"(y) Note {noteID} removed.", cancellationToken).ConfigureAwait(false);
-            await SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
+            await this.SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
         }
 
 
         /* CLEAR */
         [RegexCommand("notes clear")]
-        private async Task CmdClearAsync(CommandContext context, CancellationToken cancellationToken = default)
+        public async Task CmdClearAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
-            UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
+            UserData data = await this.GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
             bool needsSaving = data.Notes.Any();
             data.Notes.Clear();
             await context.ReplyTextAsync($"(y) Your notes list cleared.", cancellationToken).ConfigureAwait(false);
             if (needsSaving)
-                await SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
+                await this.SaveUserDataAsync(context, data, cancellationToken).ConfigureAwait(false);
         }
         #endregion
 

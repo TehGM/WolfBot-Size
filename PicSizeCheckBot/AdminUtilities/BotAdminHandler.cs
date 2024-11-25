@@ -35,7 +35,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
         [Command("join")]
         [RequireBotAdmin]
-        private async Task CmdJoinAsync(CommandContext context, [MissingError("(n) Please provide group name.")] [ArgumentsText] string groupName, CancellationToken cancellationToken = default)
+        public async Task CmdJoinAsync(CommandContext context, [MissingError("(n) Please provide group name.")] [ArgumentsText] string groupName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {
@@ -59,7 +59,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
         [Command("leave")]
         [RequireBotAdmin]
-        private async Task CmdLeaveAsync(CommandContext context, [ArgumentsText] string groupName = null, CancellationToken cancellationToken = default)
+        public async Task CmdLeaveAsync(CommandContext context, [ArgumentsText] string groupName = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {
@@ -103,14 +103,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
 
         [Command("reconnect")]
         [RequireBotAdmin]
-        private async Task CmdReconnectAsync(CommandContext context, CancellationToken cancellationToken = default)
+        public async Task CmdReconnectAsync(CommandContext context, CancellationToken cancellationToken = default)
         {
             if (_reconnecting)
                 return;
 
             await context.ReplyTextAsync("/me I am now going to reconnect, hang on.", cancellationToken).ConfigureAwait(false);
-            _reconnecting = true;
-            _reconnectRequests.Add(context);
+            this._reconnecting = true;
+            this._reconnectRequests.Add(context);
             await context.Client.DisconnectAsync(cancellationToken).ConfigureAwait(false);
             await Task.Delay(200, cancellationToken).ConfigureAwait(false);
             await context.Client.ConnectAsync(cancellationToken).ConfigureAwait(false);
@@ -120,16 +120,16 @@ namespace TehGM.WolfBots.PicSizeCheckBot.AdminUtilities
         {
             try
             {
-                if (!_reconnecting || _reconnectRequests.Count == 0)
+                if (!this._reconnecting || this._reconnectRequests.Count == 0)
                     return;
 
-                for (int i = 0; i < _reconnectRequests.Count; i++)
-                    await _reconnectRequests[i].ReplyTextAsync("/me I am back online.", _cts?.Token ?? default).ConfigureAwait(false);
+                for (int i = 0; i < this._reconnectRequests.Count; i++)
+                    await this._reconnectRequests[i].ReplyTextAsync("/me I am back online.", _cts?.Token ?? default).ConfigureAwait(false);
             }
             finally
             {
-                _reconnectRequests.Clear();
-                _reconnecting = false;
+                this._reconnectRequests.Clear();
+                this._reconnecting = false;
             }
         }
 
