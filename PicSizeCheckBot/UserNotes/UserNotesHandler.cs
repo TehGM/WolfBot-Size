@@ -57,7 +57,7 @@ cancellationToken).ConfigureAwait(false);
             // if no ID provided, get all
             if (string.IsNullOrWhiteSpace(userInput))
             {
-                UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
+                UserData data = await this.GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
                 if (data?.Notes?.Any() != true)
                 {
                     await context.ReplyTextAsync("Your notes list is empty.", cancellationToken).ConfigureAwait(false);
@@ -107,7 +107,7 @@ cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
-                UserData data = await GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
+                UserData data = await this.GetOrCreateUserData(context, cancellationToken).ConfigureAwait(false);
                 if (!data.Notes.TryGetValue(id, out string note))
                 {
                     await context.ReplyTextAsync($"(n) You don't have a note with ID {id}.", cancellationToken).ConfigureAwait(false);

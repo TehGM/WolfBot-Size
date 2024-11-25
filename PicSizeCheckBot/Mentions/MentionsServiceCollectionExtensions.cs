@@ -21,8 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddMentions(this IServiceCollection services, IConfiguration configurationSection, Action<MentionsOptions> configureOptions = null)
         {
-            if (services == null)
-                throw new ArgumentNullException(nameof(services));
+            ArgumentNullException.ThrowIfNull(services);
 
             services.AddWolfClient();
             services.TryAddSingleton<IMongoConnection, MongoConnection>();
