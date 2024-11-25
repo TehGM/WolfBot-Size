@@ -10,7 +10,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot
         public static Task SendGroupMembersBugNoticeAsync(this IWolfClient client, ChatMessage message, CancellationToken cancellationToken = default)
         {
             return client.ReplyTextAsync(message, "/alert WOLF servers are broken and refused to let me check if you're an admin in this group.\n" +
-                "Please tell WOLF server developers to fix this already. :(", cancellationToken);
+                "Please cry for fix. :'(", cancellationToken);
         }
     }
 }
