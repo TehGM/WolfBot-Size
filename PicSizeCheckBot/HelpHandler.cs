@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Reflection;
+﻿using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.Wolfringo;
@@ -24,7 +22,7 @@ Bot features and commands: https://github.com/TehGM/WolfBot-Size/wiki
 Questions, suggestions or bugs reports: https://github.com/TehGM/WolfBot-Size/issues.
 Sponsor my work: https://github.com/sponsors/TehGM
 
-Using Wolfringo library v2.0.1
+Using Wolfringo library v2.1.1
 Bot version: v{GetVersion()}
 Copyright © 2020 TehGM",  // due to AGPL licensing, this line cannot be changed or removed, unless by the original author
 cancellationToken);
