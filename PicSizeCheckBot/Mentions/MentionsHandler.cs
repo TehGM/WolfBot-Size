@@ -79,12 +79,12 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
                         if (mentionConfig.ID == senderID)
                             continue;
 
-                        if (await this.AnyFilterBlocksAsync(message, mentionConfig.GlobalFilters, cancellationToken).ConfigureAwait(false))
+                        if (await this.AnyFilterBlocksAsync(mentionConfig.ID, message, mentionConfig.GlobalFilters, cancellationToken).ConfigureAwait(false))
                             continue;
 
                         foreach (MentionPattern pattern in mentionConfig.Patterns ?? Enumerable.Empty<MentionPattern>())
                         {
-                            if (await this.AnyFilterBlocksAsync(message, pattern.Filters, cancellationToken).ConfigureAwait(false))
+                            if (await this.AnyFilterBlocksAsync(mentionConfig.ID, message, pattern.Filters, cancellationToken).ConfigureAwait(false))
                                 continue;
 
                             if (!pattern.IsMatch(message.Text))
@@ -102,14 +102,14 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
             catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
         }
 
-        private async ValueTask<bool> AnyFilterBlocksAsync(ChatMessage message, IEnumerable<IMentionFilter> filters, CancellationToken cancellationToken)
+        private async ValueTask<bool> AnyFilterBlocksAsync(uint userID, ChatMessage message, IEnumerable<IMentionFilter> filters, CancellationToken cancellationToken)
         {
             if (filters == null)
                 return false;
 
             foreach (IMentionFilter filter in filters)
             {
-                bool pass = await filter.PassesAsync(message, this._client, cancellationToken).ConfigureAwait(false);
+                bool pass = await filter.PassesAsync(userID, message, this._client, cancellationToken).ConfigureAwait(false);
                 if (!pass)
                     return true;
             }

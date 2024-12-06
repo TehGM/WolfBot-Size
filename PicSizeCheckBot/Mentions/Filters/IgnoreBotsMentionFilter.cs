@@ -9,7 +9,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions.Filters
     [BsonDiscriminator("Mentions.Filters.IgnoreBots", Required = true)]
     public class IgnoreBotsMentionFilter : IMentionFilter
     {
-        public async ValueTask<bool> PassesAsync(ChatMessage message, IWolfClient client, CancellationToken cancellationToken = default)
+        public async ValueTask<bool> PassesAsync(uint userID, ChatMessage message, IWolfClient client, CancellationToken cancellationToken = default)
         {
             if (message.SenderID == null)
                 return true;

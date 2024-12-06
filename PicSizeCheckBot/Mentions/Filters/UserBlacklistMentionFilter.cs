@@ -19,7 +19,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions.Filters
             this.UserIDs = userIDs as HashSet<uint> ?? userIDs?.ToHashSet();
         }
 
-        public ValueTask<bool> PassesAsync(ChatMessage message, IWolfClient client, CancellationToken cancellationToken = default)
+        public ValueTask<bool> PassesAsync(uint userID, ChatMessage message, IWolfClient client, CancellationToken cancellationToken = default)
         {
             if (this.UserIDs == null)
                 return ValueTask.FromResult(true);
