@@ -44,62 +44,57 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
 
         private async void OnChatMessage(ChatMessage message)
         {
-            using IDisposable logScope = message.BeginLogScope(_log);
-
             // run only in prod, test group or owner PM
-            if (!_environment.IsProduction() &&
-                !((message.IsGroupMessage && message.RecipientID == _botOptions.CurrentValue.TestGroupID) ||
-                (message.IsPrivateMessage && message.SenderID == _botOptions.CurrentValue.OwnerID)))
+            if (!this._environment.IsProduction() &&
+                !((message.IsGroupMessage && message.RecipientID == this._botOptions.CurrentValue.TestGroupID) ||
+                (message.IsPrivateMessage && message.SenderID == this._botOptions.CurrentValue.OwnerID)))
+                return;
+
+            if (!message.IsText || !message.IsGroupMessage)
                 return;
 
             if (this._client.CurrentUserID != null && message.SenderID.Value == this._client.CurrentUserID.Value)
                 return;
 
+            using IDisposable logScope = message.BeginLogScope(this._log);
+            uint senderID = message.SenderID.Value;
+            uint groupID = message.RecipientID;
+
+            // quit early if group or user is ignored
+            if (this._mentionsOptions.CurrentValue.IgnoredGroups?.Contains(message.RecipientID) == true)
+                return;
+            if (this._mentionsOptions.CurrentValue.IgnoredUsers?.Contains(message.SenderID.Value) == true)
+                return;
+
             try
             {
-                // only work in group text messages
-                if (!message.IsText || !message.IsGroupMessage)
-                    return;
-
-                // quit early if group or user is ignored
-                if (_mentionsOptions.CurrentValue.IgnoredGroups?.Contains(message.RecipientID) == true)
-                    return;
-                if (_mentionsOptions.CurrentValue.IgnoredUsers?.Contains(message.SenderID.Value) == true)
-                    return;
-
                 CancellationToken cancellationToken = _cts?.Token ?? default;
                 IEnumerable<MentionConfig> allMentions = await _mentionConfigStore.GetAllAsync(cancellationToken).ConfigureAwait(false);
-                if (allMentions?.Any() == true)
+                foreach (MentionConfig mentionConfig in allMentions ?? Enumerable.Empty<MentionConfig>())
                 {
-                    uint senderID = message.SenderID.Value;
-                    uint groupID = message.RecipientID;
+                    if (mentionConfig.ID == senderID)
+                        continue;
 
-                    foreach (MentionConfig mentionConfig in allMentions)
+                    if (await this.AnyFilterBlocksAsync(mentionConfig.ID, message, mentionConfig.GlobalFilters, cancellationToken).ConfigureAwait(false))
+                        continue;
+
+                    foreach (MentionPattern pattern in mentionConfig.Patterns ?? Enumerable.Empty<MentionPattern>())
                     {
-                        if (mentionConfig.ID == senderID)
+                        if (await this.AnyFilterBlocksAsync(mentionConfig.ID, message, pattern.Filters, cancellationToken).ConfigureAwait(false))
                             continue;
 
-                        if (await this.AnyFilterBlocksAsync(mentionConfig.ID, message, mentionConfig.GlobalFilters, cancellationToken).ConfigureAwait(false))
+                        if (!pattern.IsMatch(message.Text))
                             continue;
 
-                        foreach (MentionPattern pattern in mentionConfig.Patterns ?? Enumerable.Empty<MentionPattern>())
-                        {
-                            if (await this.AnyFilterBlocksAsync(mentionConfig.ID, message, pattern.Filters, cancellationToken).ConfigureAwait(false))
-                                continue;
-
-                            if (!pattern.IsMatch(message.Text))
-                                continue;
-
-                            string text = await this.BuildMentionMessage(message, mentionConfig, cancellationToken).ConfigureAwait(false);
-                            await this._client.SendPrivateTextMessageAsync(mentionConfig.ID, text, cancellationToken).ConfigureAwait(false);
-                            break;
-                        }
+                        string text = await this.BuildMentionMessage(message, mentionConfig, cancellationToken).ConfigureAwait(false);
+                        await this._client.SendPrivateTextMessageAsync(mentionConfig.ID, text, cancellationToken).ConfigureAwait(false);
+                        break;
                     }
                 }
             }
             catch (TaskCanceledException) { }
             catch (MessageSendingException ex) when (ex.SentMessage is ChatMessage && ex.Response is WolfResponse response && response.ErrorCode == WolfErrorCode.LoginIncorrectOrCannotSendMessage) { }
-            catch (Exception ex) when (ex.LogAsError(_log, "Error occured when processing message")) { }
+            catch (Exception ex) when (ex.LogAsError(this._log, "Error occured when processing message")) { }
         }
 
         private async ValueTask<bool> AnyFilterBlocksAsync(uint userID, ChatMessage message, IEnumerable<IMentionFilter> filters, CancellationToken cancellationToken)
@@ -142,7 +137,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
         // Implementing IHostedService ensures this class is created on start
         Task IHostedService.StartAsync(CancellationToken cancellationToken)
         {
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            this._cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             return Task.CompletedTask;
         }
         Task IHostedService.StopAsync(CancellationToken cancellationToken)
