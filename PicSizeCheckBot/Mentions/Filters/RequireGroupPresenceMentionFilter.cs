@@ -1,6 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TehGM.Wolfringo.Messages;
@@ -13,10 +12,10 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions.Filters
     {
         public HashSet<uint> ExceptGroupIDs { get; }
 
-        [BsonConstructor(nameof(this.ExceptGroupIDs))]
-        public RequireGroupPresenceMentionFilter(IEnumerable<uint> exceptGroupIDs)
+        [BsonConstructor]
+        public RequireGroupPresenceMentionFilter()
         {
-            this.ExceptGroupIDs = exceptGroupIDs as HashSet<uint> ?? exceptGroupIDs?.ToHashSet();
+            this.ExceptGroupIDs = new HashSet<uint>();
         }
 
         public async ValueTask<bool> PassesAsync(uint userID, ChatMessage message, IWolfClient client, CancellationToken cancellationToken = default)
