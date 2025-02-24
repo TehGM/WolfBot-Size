@@ -87,7 +87,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions
                             continue;
 
                         string text = await this.BuildMentionMessage(message, mentionConfig, cancellationToken).ConfigureAwait(false);
-                        await this._client.SendPrivateTextMessageAsync(mentionConfig.ID, text, cancellationToken).ConfigureAwait(false);
+                        await this._client.SendPrivateTextMessageAsync(mentionConfig.ID, text, ChatMessageSendingOptions.DisableEmbeds, cancellationToken).ConfigureAwait(false);
                         break;
                     }
                 }

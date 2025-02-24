@@ -274,7 +274,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.SizeChecking
                 response += $"\r\nImage URL: {imageUrl}";
 
             // send the response
-            await context.ReplyTextAsync(response, cancellationToken).ConfigureAwait(false);
+            await context.ReplyTextAsync(response, ChatMessageSendingOptions.DisableEmbeds, cancellationToken).ConfigureAwait(false);
         }
 
         private async ValueTask<bool> CheckShouldCheckSizeAsync(CommandContext context, ITargetConfig config, CancellationToken cancellationToken = default)

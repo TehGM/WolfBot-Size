@@ -96,7 +96,7 @@ cancellationToken).ConfigureAwait(false);
                     includedEntries.Add(appendNotif);
                 }
 
-                await context.ReplyTextAsync(string.Join("\r\n", includedEntries), cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(string.Join("\r\n", includedEntries), ChatMessageSendingOptions.DisableEmbeds, cancellationToken).ConfigureAwait(false);
             }
             // otherwise, get a specific one
             else
@@ -114,7 +114,7 @@ cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
-                await context.ReplyTextAsync(note, cancellationToken).ConfigureAwait(false);
+                await context.ReplyTextAsync(note, ChatMessageSendingOptions.DisableEmbeds, cancellationToken).ConfigureAwait(false);
             }
         }
 
