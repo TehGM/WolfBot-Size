@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>TehGM.WolfBots.PicSizeCheckBot</RootNamespace>
-    <Version>2.2.4</Version>
+    <Version>2.2.5</Version>
     <Authors>TehGM</Authors>
     <Company>TehGM</Company>
     <Product>WolfBot-Size</Product>
