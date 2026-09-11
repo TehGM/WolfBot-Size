@@ -13,7 +13,7 @@ namespace TehGM.WolfBots.PicSizeCheckBot.Mentions.Filters
     {
         public HashSet<uint> UserIDs { get; }
 
-        [BsonConstructor(nameof(this.UserIDs))]
+        [BsonConstructor(nameof(UserIDs))]
         public UserBlacklistMentionFilter(IEnumerable<uint> userIDs)
         {
             this.UserIDs = userIDs as HashSet<uint> ?? userIDs?.ToHashSet();
